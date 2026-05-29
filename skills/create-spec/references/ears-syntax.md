@@ -12,12 +12,12 @@ While <optional pre-condition>, when <optional trigger>, the <system name> shall
 
 An EARS requirement must have:
 
-- 0 or many preconditions
+- 0 or more preconditions
 - 0 or 1 trigger
 - 1 system name
-- 1 or many system behaviours.
+- 1 or more system behaviours.
 
-## Patters
+## Patterns
 
 ### Ubiquitous requirements
 
@@ -37,7 +37,7 @@ Example: While there is no card in the ATM, the ATM shall display “insert card
 
 ### Event driven requirements
 
-Specify how a system must behave one or more triggering event denoted by keyword `When` occurs.
+Specify how a system must behave when one or more triggering events denoted by keyword `When` occurs.
 
 Syntax: When <trigger>, the <system name> shall <system behaviour>
 
@@ -70,5 +70,4 @@ Examples:
 - While the aircraft is on ground, when reverse thrust is commanded, the engine control system shall enable reverse thrust.
 
 Complex requirements for unwanted behaviour also include the If-Then keywords.
-
 

@@ -2,11 +2,11 @@
 
 ## Purpose / Big Picture
 
-Explain in plain, non-technical language, what problem needs to be solved. why this feature is valuable, what problem does it solve, who benefits after this change and in what way. State the user-visible behavior you will enable.
+Explain in plain, non-technical language, what problem needs to be solved. Why this feature is valuable, what problem does it solve, who benefits after this change and in what way. State the user-visible behavior you will enable.
 
 ## User stories
 
-Follow a vertical instead of horizontal split of delivered value when drafting stories. Each story should have the following key characterstics:
+Follow a vertical instead of horizontal split of delivered value when drafting stories. Each story should have the following key characteristics:
 
 1. **Independent**: Prefer stories that can be implemented, tested, and released without requiring unrelated stories or coordinated changes. Avoid hidden dependencies, shared refactors, or coupling across multiple features.
 2. **Vertical**: Draft stories that deliver observable user-facing or system-visible behavior end-to-end. Avoid stories that cut through horizontal layers of infrastructure, plumbing, or layered-only work unless explicitly required.
@@ -102,7 +102,7 @@ All requirements **must** be expressed strictly using [EARS](./ears-syntax.md) s
 
 ## Solution
 
-Provide a technical description of the solution. Focus on high-level design elements which critically affect the implemenation.
+Provide a technical description of the solution. Focus on high-level design elements which critically affect the implementation.
 
 - Key architectural or design decisions.
 - Core modules, their boundaries, responsibilities and inter-dependencies.
@@ -125,13 +125,13 @@ Identify here any edge use cases that will need to be addressed by this spec.
 
 ## Out of Scope
 
-Identify here anything that falls outside out of scope for this feature.
+Identify here anything that falls outside the scope for this feature.
 
 ## Clarifications needed
 
-Mentioned anything in the spec that is ambiguous, contradictory or reqires further clarification to make it more concrete.
+Mention anything in the spec that is ambiguous, contradictory or requires further clarification to make it more concrete.
 
 - Avoid listing entries here for which reasonable defaults exist. Instead, directly update the spec accordingly.
 - If any open question can be answered from inspecting the codebase do not add it here. Instead, inspect the codebase and then update the spec accordingly.
 - Avoid being pedantic or nitpicky. Call out only something that will materially impact the feature.
-- Cap to no more than 5 clarifications at any given time. If neccessary, keep the most critical ones and prune the rest.
+- Cap to no more than 5 clarifications at any given time. If necessary, keep the most critical ones and prune the rest.

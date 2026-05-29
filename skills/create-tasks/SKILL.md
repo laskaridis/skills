@@ -12,7 +12,7 @@ The output must contain small, tightly bounded, implementation-ready tasks with 
 
 ## Inputs
 
-The user is requried to provide a specification file. If none has been provided then stop and ask the user to provide one.
+The user is required to provide a specification file. If none has been provided then stop and ask the user to provide one.
 
 ## Constraints
 
@@ -22,7 +22,7 @@ You are running in **RESTRICTED WRITE MODE**. This means that you are not allowe
 
 1. Create tasks with clear goals:
 
-- Each task must have one clear, specific and unabmiguous objective.
+- Each task must have one clear, specific and unambiguous objective.
 - Avoid unclear, vague and ambiguous task goals that would allow the model to second guess.
 - It is crucial by reading the task a low-reasoning coding agent avoids guessing what it needs to implement or how to implement it.
 
@@ -38,7 +38,7 @@ You are running in **RESTRICTED WRITE MODE**. This means that you are not allowe
 
 4. Create verifiable tasks:
 
-- Each task must include clear, unabmiguous and locally verifiable acceptance criteria which verify observable behaviour.
+- Each task must include clear, unambiguous and locally verifiable acceptance criteria which verify observable behavior.
 - Acceptance criteria must be locally observable from files, return values, CLI behavior, persisted artifacts, or deterministic tests.
 - Avoid subjective acceptance criteria such as “keeps the design clear”, “reflects the rewrite properly”, or “is suitable for later use”.
 
@@ -47,7 +47,7 @@ You are running in **RESTRICTED WRITE MODE**. This means that you are not allowe
 - Provide clear and unambiguous implementation guidelines as if you are explaining to a junior developer how to implement the task.
 - Avoid vague instructions such as “refactor for clarity”, “optimize the implementation”, or “implement in a clean way”.
 
-4. Link tasks to an explicity user story or requirement:
+4. Link tasks to an explicit user story or requirement:
 
 - If a task cannot be directly traced back to a specific user story or requirement, either remove it or narrow it.
 
@@ -84,7 +84,7 @@ Use the following schema EXACTLY:
       "story_addressed": "<the id of the user story or requirement this task traces back to>",
       "requirements_addressed": [
         "<the id of the functional or non-fucnctional requirement this task traces back to>"
-      ]
+      ],
       "files": [
         "<path/to/file1 relative from repo_root>"
       ],
@@ -164,14 +164,14 @@ Use the following schema EXACTLY:
 }
 ```
 
-## Final verificaiton checklist
+## Final verification checklist
 
 Before returning, verify that all of the following conditions are satisfied:
 
 [ ] Output is valid JSON file placed under the same directory as the specification file with the name `tasks.json`.
 [ ] You completed an internal requirement-to-task coverage pass before returning.
 [ ] Every task has one clear, specific and unambiguous outcome that aligns with the specification.
-[ ] Every task has a small, clear and tightly bunded file scope.
+[ ] Every task has a small, clear and tightly bounded file scope.
 [ ] Every task has clear, unambiguous and verifiable acceptance criteria.
 [ ] No task requires second guessing how it will be implemented or how it will be verified.
 [ ] Task dependencies reference valid IDs and there are no circular dependencies between tasks.
