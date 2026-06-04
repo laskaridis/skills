@@ -2,12 +2,12 @@
 
 Opinionated skills for developers who want coding agents to produce tighter specs, more executable task plans, and safer refactors.
 
-These skills are built for a practical workflow with the following charactreristics:
+These skills are built for a practical workflow with the following characteristics:
 
 1. Uses a stronger reasoning model to think through the feature.
 2. Locks that context into a usable specification document.
 3. Turns the spec into tightly scoped tasks for low reasoning coding agents.
-4. Implementats tasks using a ralph loop (AFK).
+4. Implements tasks using a TDD loop, optionally within a ralph loop (AFK).
 5. Review and clean-up the final implementation with behavior-preserving refactorings.
 
 ## Why use these skills
@@ -18,6 +18,7 @@ This repo solves that by giving you a small pipeline of reusable skills:
 
 - `create-spec` to turn a long design discussion into a structured feature specification.
 - `create-tasks` to turn that specification into small, verifiable implementation tasks.
+- `tdd` to drive implementation with failing tests before production code changes.
 - `refactor` to help you improve the final design without changing behavior.
 
 The result is a workflow that is easier to review, easier to delegate, and less dependent on a single expensive model session.
@@ -32,6 +33,9 @@ npx skills add https://github.com/laskaridis/skills --skill create-spec
 
 # Install create-tasks
 npx skills add https://github.com/laskaridis/skills --skill create-tasks
+
+# Install tdd
+npx skills add https://github.com/laskaridis/skills --skill tdd
 
 # Install refactor
 npx skills add https://github.com/laskaridis/skills --skill refactor
@@ -50,8 +54,9 @@ I usually use these skills when delivering non-trivial features:
 1. Use a high-reasoning model to discuss the feature until the problem, scope, and tradeoffs are clear.
 2. Run `create-spec` to preserve that context as a feature spec.
 3. Run `create-tasks` to break the spec into small implementation tasks for lower-reasoning coding agents.
-4. Execute the tasks in your preferred agent loop.
-5. Review the result and run `refactor` on the areas that need structural cleanup.
+4. Run `tdd` while implementing each behavior change so tests capture the intended behavior before production code changes.
+5. Execute the tasks in your preferred agent loop.
+6. Review the result and run `refactor` on the areas that need structural cleanup.
 
 This is a good fit for feature work where you want a repeatable handoff between planning and implementation.
 
@@ -131,6 +136,47 @@ Best used when:
 - you want explicit acceptance criteria instead of vague implementation prompts
 - you need a task plan that can be executed incrementally (for example within a ralph loop)
 
+### tdd
+
+Use `tdd` when you want implementation to follow a red-green-refactor loop.
+
+What it does:
+
+- clarifies the smallest observable behavior change
+- finds the existing test pattern before adding new tests
+- writes or identifies a failing test before production code changes
+- implements only enough code to make the failing test pass
+- refactors only while tests are green
+
+Required input:
+
+- the behavior to implement, fix, or change
+- enough repository context to locate the relevant code and tests
+
+Output:
+
+- a code change driven by tests
+- a summary of the red test, green implementation, and verification commands
+
+Why it is useful:
+
+- prevents agents from editing production code before behavior is specified
+- catches regressions with executable examples
+- keeps implementation slices small and reviewable
+
+Example prompt:
+
+```text
+Use the tdd skill to fix duplicate line items being added to an order.
+```
+
+Best used when:
+
+- you are implementing a new behavior
+- you are fixing a bug and want a regression test first
+- you are changing legacy code and need characterization tests before editing it
+- you want refactoring to happen only after tests are green
+
 ### refactor
 
 Use `refactor` when you want to identify improvement opportunities in a part of the codebase, or when you already know a specific area is hard to understand, duplicated, over-coupled, or structurally more complex than it needs to be.
@@ -175,4 +221,5 @@ Best used when:
 
 - `create-spec` is effective when the current conversation already contains meaningful product and technical context.
 - `create-tasks` is only as good as the spec you feed into it, so make sure you review `spec.md` before delegating implementation.
+- `tdd` works best when the expected behavior is concrete enough to express as a failing test.
 - `refactor` works best when you point it at a concrete file, module, or subsystem instead of saying "clean up the codebase".
