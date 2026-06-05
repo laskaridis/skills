@@ -27,9 +27,10 @@ If the caller also provides additional context, you must **ALWAYS** take it into
 
 ## Constraints 
 
-- Preserve behavior
-- Refactor only if the resulting code is simpler, clearer or more succinct
-- Avoid changing public APIs unless explicitly requested
+- Preserve existing behavior
+- Avoid refactoring code that is untested; if missing add characterization tests first
+- Refactor only if the resulting code will be simpler, clearer or more succinct
+- Refactor in small steps, verifying behavior preservation and test coverage at each step
 - Avoid introducing design patterns only for aesthetics
 - Avoid refactoring unrelated code opportunistically
 - Avoid changing code formatting across large files unless required.
@@ -84,6 +85,7 @@ Potential refactorings that fix it:
 - Move embellishment to DECORATOR
 - Replace state-altering conditionals with STATE
 - Introduce Null Object
+- Use CHAIN OF RESPONSIBILITY when cases are independent and order matters.
 
 Use Null Object only when “absence” has stable, well-defined behavior.
 
@@ -174,6 +176,7 @@ Potential refactorings that fix it:
 - Replace conditional logic with STRATEGY
 - Replace conditional dispatcher with COMMAND
 - Replace state-altering conditionals with STATE
+- Use CHAIN OF RESPONSIBILITY when cases are independent and order matters
 
 Keep a switch when it is exhaustive, local, readable, and unlikely to change.
 
