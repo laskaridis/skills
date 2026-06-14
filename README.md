@@ -1,11 +1,11 @@
 [![skills.sh](https://skills.sh/b/laskaridis/skills)](https://skills.sh/laskaridis/skills)
 
-Opinionated skills for developers who want coding agents to produce tighter specs, more executable task plans, and safer refactors.
+Opinionated skills for developers who want coding agents to discover the domain, produce tighter specs, generate more executable task plans, and perform safer refactors.
 
 These skills are built for a practical workflow with the following characteristics:
 
-1. Uses a stronger reasoning model to think through the feature.
-2. Locks that context into a usable specification document.
+1. Uses a stronger reasoning model to explore the domain and think through the feature.
+2. Locks that context into usable domain documents and a specification document.
 3. Turns the spec into tightly scoped tasks for low reasoning coding agents.
 4. Implements tasks using a TDD loop, optionally within a ralph loop (AFK).
 5. Review and clean-up the final implementation with behavior-preserving refactorings.
@@ -16,6 +16,7 @@ Most agent workflows fail in one of two ways: either the intent stays vague, or 
 
 This repo solves that by giving you a small pipeline of reusable skills:
 
+- `event-storming` to discover the business domain, bounded contexts, events, commands, policies, and hotspots before implementation.
 - `create-spec` to turn a long design discussion into a structured feature specification.
 - `create-tasks` to turn that specification into small, verifiable implementation tasks.
 - `tdd` to drive implementation with failing tests before production code changes.
@@ -28,6 +29,9 @@ The result is a workflow that is easier to review, easier to delegate, and less 
 Run these in the target project where you want the skills to be available:
 
 ```bash
+# Install event-storming
+npx skills add https://github.com/laskaridis/skills --skill event-storming
+
 # Install create-spec
 npx skills add https://github.com/laskaridis/skills --skill create-spec
 
@@ -51,16 +55,55 @@ npx skills --help
 
 I usually use these skills when delivering non-trivial features:
 
-1. Use a high-reasoning model to discuss the feature until the problem, scope, and tradeoffs are clear.
-2. Run `create-spec` to preserve that context as a feature spec.
-3. Run `create-tasks` to break the spec into small implementation tasks for lower-reasoning coding agents.
-4. Run `tdd` while implementing each behavior change so tests capture the intended behavior before production code changes.
-5. Execute the tasks in your preferred agent loop.
-6. Review the result and run `refactor` on the areas that need structural cleanup.
+1. Use a high-reasoning model to discuss the problem until the business process, scope, and tradeoffs are clear enough to start structured discovery.
+2. Run `event-storming` to capture the domain model, language, decisions, and open questions under `docs/domain/`.
+3. Run `create-spec` to preserve the agreed product and technical context as a feature spec.
+4. Run `create-tasks` to break the spec into small implementation tasks for lower-reasoning coding agents.
+5. Run `tdd` while implementing each behavior change so tests capture the intended behavior before production code changes.
+6. Execute the tasks in your preferred agent loop.
+7. Review the result and run `refactor` on the areas that need structural cleanup.
 
 This is a good fit for feature work where you want a repeatable handoff between planning and implementation.
 
 ## Skills
+
+### event-storming
+
+Use `event-storming` when you need to discover or clarify the business domain before writing a spec or implementation plan.
+
+What it does:
+
+- facilitates a domain-driven design discussion one question at a time
+- discovers bounded contexts, domain events, commands, actors, policies, read models, aggregates, external systems, hotspots, decisions, and ubiquitous language
+- writes and continuously updates domain documents under `docs/domain/`
+- keeps assumptions and unresolved questions explicit instead of silently inventing domain rules
+
+Required input:
+
+- a problem or business process to model
+- enough user or repository context to answer domain questions accurately
+
+Output:
+
+- a `docs/domain/` structure containing shared and context-specific domain artifacts
+
+Why it is useful:
+
+- creates a durable domain model before implementation details take over the discussion
+- exposes ambiguity, missing business rules, and ownership boundaries early
+- gives downstream specification and task-generation steps better raw material
+
+Example prompt:
+
+```text
+Use the event-storming skill to model the order cancellation flow and document the domain under docs/domain.
+```
+
+Best used when:
+
+- the business workflow is still fuzzy or contested
+- multiple actors, systems, or policy decisions are involved
+- you want to identify bounded contexts and domain language before writing a feature spec
 
 ### create-spec
 
@@ -219,6 +262,7 @@ Best used when:
 
 ## Notes and caveats
 
+- `event-storming` is for discovery and modeling. It should not be used to write code or invent missing business rules.
 - `create-spec` is effective when the current conversation already contains meaningful product and technical context.
 - `create-tasks` is only as good as the spec you feed into it, so make sure you review `spec.md` before delegating implementation.
 - `tdd` works best when the expected behavior is concrete enough to express as a failing test.

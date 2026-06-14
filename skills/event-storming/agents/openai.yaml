@@ -1,0 +1,3 @@
+interface:
+  display_name: "Event storming"
+  short_description: "Use event storming to discover and model the domain of a software system."
