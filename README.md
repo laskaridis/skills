@@ -30,19 +30,19 @@ Run these in the target project where you want the skills to be available:
 
 ```bash
 # Install event-storming
-npx skills add https://github.com/laskaridis/skills --skill event-storming
+npx skills add laskaridis/skills@event-storming
 
 # Install create-spec
-npx skills add https://github.com/laskaridis/skills --skill create-spec
+npx skills add laskaridis/skills@create-spec
 
 # Install create-tasks
-npx skills add https://github.com/laskaridis/skills --skill create-tasks
+npx skills add laskaridis/skills@create-tasks
 
 # Install tdd
-npx skills add https://github.com/laskaridis/skills --skill tdd
+npx skills add laskaridis/skills@tdd
 
 # Install refactor
-npx skills add https://github.com/laskaridis/skills --skill refactor
+npx skills add laskaridis/skills@refactor
 ```
 
 If you need help with the CLI:

@@ -5,11 +5,11 @@ description: Guide coding agents through test-driven development for code change
 
 # TDD
 
-Use this skill to write production code with an executable description of the desired behavior.
+Use this skill to write verifiable, well-designed production code.
 
 ## Core Rule
 
-When writing production code start by writing a test that describes the intended behavior first, following a RED -> GREEN cycle.
+When writing production code start by writing a test that describes the intended behavior first. Follow a RED -> GREEN cycle.
 
 ## Workflow
 
@@ -33,7 +33,7 @@ Before you write a single line of code:
 - Avoid broad rewrites, speculative abstractions, unrelated cleanup, or extra behavior not covered by the test.
 - Don't assume it passes, verify by running the narrowest relevant test command.
 
-4. Repeat:
+4. Repeat.
 
 - Continue to step 2 with the next test scenario from the list.
 - Stop if there are no more test scenarios in the list.
