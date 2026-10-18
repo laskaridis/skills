@@ -1,12 +1,12 @@
 ---
 name: create-spec
-description: Turn the current conversation context into a specification document. Use when user wants to create a specification from the current context.
+description: Turn the current conversation context into a specification document. Use when user wants to create a lean specification from the current context.
 argument-hint: Where should the specification document be created?
 ---
 
 ## Goal
 
-Act as a senior product manager tasked with creating a specification document for a new feature. Your task is to synthesize the current conversation context, along with your understanding of the project, into a clear and concise specification document that can guide the development team in implementing and delivering the feature.
+Synthesize the current conversation context, along with your understanding of the project, into a clear and concise specification document that can guide coding agents in implementing and delivering the feature.
 
 ## Input
 
@@ -18,11 +18,20 @@ You are in **RESTRICTED EDIT MODE**. You are not allowed to modify any files in 
 
 ## Workflow 
 
-1. Read fully SKILL_ROOT/references/spec-template.md to understand the structure and content expected in the specification document.
+1. Read fully SKILL_ROOT/references/spec-template.md to understand the expected structure and content of the specification document.
 
-2. Explore the codebase as needed (if you haven't done so already) to understand the current state of relevant area or areas that the new feature will affect.
+2. Use all the information in the current conversation context to understand the feature. Extract the agreed outcomes, scope, rules, assumptions and unresolved questions. Follow explicit corrections and exclude rejected or superseded proposals. 
 
-3. Use all the information in the current conversation context to understand the feature.
+3. Explore the codebase as needed to understand the current state of relevant area(s) that the new feature will affect. Direct exploration toward the axis of change imposed by the conversation. Identify any:
+  - Relevant bounded contexts and domain language.
+  - Established implementation conventions relevant to the feature.
+  - Relevant architectural decisions and constraints documented in ADRs or other project documentation.
+  - Existing contracts, domain invariants, integration boundaries, and compatibility requirements that the feature must respect.
+
+4. Validate the finished spec against that extracted context, checking both omissions and unsupported addition:
+   - Check that stories and acceptance criteria describe consistently and fully the target behavior.
+   - Check that the spec does not introduces unrequested scope.
+   - Resolve inconsistencies using the conversation and codebase. Record unresolved material conflicts under "Clarifications" needed rather than choosing silently.
 
 **Important:** Follow the instructions in the template closely. Pay special attention to any guidelines, make sure to include all required sections and use the appropriate formatting.
 
@@ -30,10 +39,11 @@ You are in **RESTRICTED EDIT MODE**. You are not allowed to modify any files in 
 
  Write the specification document under the location specified by the user, as a file named `spec.md`.
 
- Follow the structure and content guidelines provided in the `spec-template.md`.
+ Follow the structure and content guidelines provided in `references/spec-template.md`.
 
 ## Guidelines
 
-- Always use clear, plain and concise language. No fluff allowed!
-- Focus on the user needs, how these are addressed and the value provided.
+- Always use clear, plain and concise language.
+- Align the document with pre-existing bounded contexts and domain language.
+- Focus on user needs, how these are addressed and the value provided.
 - Follow the project's established domain language vocabulary throughout the specification.
