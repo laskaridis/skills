@@ -5,7 +5,7 @@ description: "Discover, challenge, validate, and document domain language, busin
 
 # Domain-Driven Design
 
-Help coding agents understand and preserve the business model through a **Discover → Challenge → Validate → Capture → Verify** workflow.
+Help coding agents understand and preserve the business model to write code that aligns with the ubiquitous domain language used by the business.
 
 ## Core rules
 
@@ -16,9 +16,9 @@ Help coding agents understand and preserve the business model through a **Discov
 
 ## Workflow
 
-### 1. Discover — establish the current understanding
+### 1. Discover 
 
-Inspect the specific context supplied by the user or established by the task.
+Goal: Inspect the specific context supplied by the user or established by the task to establish the current understanding.
 
 - Read existing `CONTEXT.md`, `LANGUAGE.md`, and `CONTEXT-MAP.md` for relevant bounded contexts **before editing**.
 - Inspect specifications, business discussions, and relevant code when useful. Treat code as evidence of implementation, not necessarily of intended business behavior.
@@ -26,9 +26,9 @@ Inspect the specific context supplied by the user or established by the task.
 - Identify established responsibilities and context relationships without assuming that code modules, services, or database boundaries are bounded contexts.
 - For important claims, retain their source and distinguish confirmed knowledge, implementation observations, and tentative inferences. If sources disagree, preserve the disagreement.
 
-### 2. Challenge — test the model where it matters
+### 2. Challenge
 
-Actively look for material gaps in the discovered model rather than merely transcribing it.
+Goal: Actively look for material gaps in the discovered model rather than merely transcribing it.
 
 - Challenge ambiguous or overloaded terms, contradictory rules, unclear ownership, and undefined lifecycle transitions.
 - For consequential rules or boundaries, devise a few **discriminating hypothetical scenarios** (including relevant failure cases, state transitions, or cross-context interactions) that could reveal different interpretations.
@@ -38,9 +38,9 @@ Actively look for material gaps in the discovered model rather than merely trans
 
 **Hypothetical scenarios are probes, not requirements.** Never record an invented scenario's expected outcome as an accepted rule without validation.
 
-### 3. Validate — resolve decisions against evidence
+### 3. Validate 
 
-Before promoting a challenged interpretation into established domain knowledge:
+Goal: Resolve decisions against evidence before promoting a challenged interpretation into established domain knowledge.
 
 - Confirm it from an explicit user/domain-expert decision or an authoritative, applicable business source. Do not treat a speculative inference or the current implementation as independent business confirmation.
 - Surface material discrepancies between intended behavior and code rather than choosing one silently.
@@ -50,7 +50,9 @@ Before promoting a challenged interpretation into established domain knowledge:
 
 Validation is a decision gate for **new or conflicting consequential claims**, not a mandatory human approval step for every term or edit.
 
-### 4. Capture — update the relevant domain documents
+### 4. Capture
+
+Goal: Update the relevant domain documents.
 
 Read [references/document-templates.md](references/document-templates.md) fully for document outlines and placement guidance. Adapt them to existing useful structure instead of replacing maintained documents.
 
@@ -94,9 +96,9 @@ project/
 - For **consequential, accepted modeling decisions** (such as business ownership or consistency boundaries), capture the choice, rationale, and meaningful alternatives briefly in `CONTEXT.md`. Link an existing ADR when architectural rationale lives there; do not create architectural ADRs or change code as part of this skill.
 - Limit changes to relevant domain documents and necessary links. Do not rename symbols, alter behavior, or scaffold an architecture.
 
-### 5. Verify — check integrity and report
+### 5. Verify
 
-Verify that:
+Goal: Check integrity and report.
 
 - Every relevant project context has both documents, and a multi-context project has a root map with working relative links.
 - Terms have precise local meanings, including material synonyms and conflicting usages.
