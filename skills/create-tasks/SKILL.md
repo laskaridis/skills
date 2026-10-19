@@ -28,7 +28,7 @@ You are running in **RESTRICTED WRITE MODE**. This means that you are not allowe
 
 2. Create small tasks:
 
-- Design for narrowly scoped tasks that modify the minimum necessary files. Avoid broad cross-cutting tasks unless required by the specification.
+- Design for narrowly scoped tasks. Avoid broad cross-cutting tasks unless required by the specification.
 - Prefer many small tasks over broad tasks.
 
 3. Split tasks with too broad scope:
@@ -39,7 +39,7 @@ You are running in **RESTRICTED WRITE MODE**. This means that you are not allowe
 4. Create verifiable tasks:
 
 - Each task must include clear, unambiguous and locally verifiable acceptance criteria which verify observable behavior.
-- Acceptance criteria must be locally observable from files, return values, CLI behavior, persisted artifacts, or deterministic tests.
+- Acceptance criteria must be locally observable from specification.
 - Avoid subjective acceptance criteria such as “keeps the design clear”, “reflects the rewrite properly”, or “is suitable for later use”.
 
 5. Provide clear implementation guidelines for each task:
@@ -85,9 +85,6 @@ Use the following schema EXACTLY:
       "requirements_addressed": [
         "<the id of the functional or non-fucnctional requirement this task traces back to>"
       ],
-      "files": [
-        "<path/to/file1 relative from repo_root>"
-      ],
       "out_of_scope": [
         "<description of anything that is explicitly out of scope for this task>"
       ],
@@ -122,10 +119,6 @@ Use the following schema EXACTLY:
   "story_addressed": "US-001",
   "requirements_addressed": [
     "FR-002"
-  ],
-  "files": [
-    "src/main/kotlin/com/example/wishlist/WishlistService.kt",
-    "src/test/kotlin/com/example/wishlist/WishlistServiceTest.kt"
   ],
   "out_of_scope": [
     "Do not change the wishlist API contract.",
