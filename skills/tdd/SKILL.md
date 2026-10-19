@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: Guide coding agents through test-driven development for code changes. Use when the user asks to code, implement, fix, refactor, or extend behavior using TDD.
+description: "Guide coding agents through test-driven development for code changes. Use when the user asks to code, implement, fix, refactor, or extend behavior using TDD."
 ---
 
 # TDD
