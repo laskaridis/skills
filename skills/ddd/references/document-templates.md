@@ -2,7 +2,7 @@
 
 Use these outlines when creating files. Replace bracketed guidance with evidence-backed content; omit optional sections without useful content. For required information that is unknown, say so briefly under open questions. Preserve useful existing structure when updating a document.
 
-Keep agreed knowledge separate from implementation observations and provisional interpretations. Use relative links from each document's own location.
+Keep accepted business knowledge separate from implementation observations and unvalidated interpretations. Hypothetical scenarios can challenge a model, but their expected outcomes must not be documented as accepted rules until validated. Use relative links from each document's own location.
 
 ## CONTEXT.md
 
@@ -25,6 +25,7 @@ or provisional, and the evidence for it.]
 [Known concepts and how they relate. Link definitions in LANGUAGE.md.]
 
 - [Business rule or invariant, with relevant evidence.]
+- [Optional validated scenario illustrating a meaningful rule or exception.]
 
 [Include meaningful lifecycles, commands, events, or aggregate consistency
 boundaries when established. Do not invent a full tactical model.]
@@ -35,6 +36,12 @@ boundaries when established. Do not invent a full tactical model.]
 or consumed, who owns its meaning, and where translation occurs, when known.
 In multi-context projects, link to the root map for relationship details.]
 
+## Model decisions
+
+[Optional: consequential accepted domain modeling decisions. Record the choice,
+why it was made, relevant alternatives and confirming source. Link an existing
+ADR when the reasoning is primarily architectural. Omit this section if none.]
+
 ## Implementation observations
 
 [Optional: current code locations and material mismatches with agreed intent.
@@ -42,7 +49,8 @@ Do not present implementation behavior as an agreed business requirement.]
 
 ## Open questions
 
-- [Unresolved ambiguity, provisional interpretation, or missing evidence.]
+- [Unresolved ambiguity, competing interpretation, provisional scope, or
+  hypothetical scenario whose expected business behavior is not yet confirmed.]
 
 ## Language
 
@@ -64,7 +72,7 @@ These meanings apply within [context name](CONTEXT.md).
 
 [Precise domain meaning and distinguishing limits within this context.]
 
-- Usage: [A short domain statement demonstrating the term, when helpful.]
+- Usage: [A short validated domain statement demonstrating the term, when helpful.]
 - Related terms: [Meaningful distinctions or links, if known.]
 - Synonyms / deprecated names: [Accepted aliases or names to avoid, and why.]
 - Other contexts: [Link to any different meaning or boundary translation.]
