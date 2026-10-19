@@ -5,14 +5,14 @@ description: "Discover, challenge, validate, and document domain language, busin
 
 # Domain-Driven Design
 
-Help coding agents understand and preserve the business model to write code that aligns with the ubiquitous domain language used by the business.
+Understand and preserv the business model to help agents write code that aligns with the ubiquitous domain language used by the business.
 
 ## Core rules
 
-- When coding, follow the established ubiquitous language and its bounded-context meanings instead of inventing names or business semantics.
-- Distinguish **accepted business knowledge**, **observed implementation behavior**, and **unvalidated interpretations or hypothetical scenarios**. Agreement with existing code is not, by itself, proof of business intent.
-- Investigate ambiguities, but never silently resolve a material conflict or turn a plausible scenario into a business rule.
-- Keep the work scoped to the domain concepts directly relevant to the task. This skill documents the model; it does not change code, behavior, or architecture.
+- Follow the established ubiquitous language and its bounded-context meanings instead of inventing names or business semantics.
+- Distinguish between **accepted business knowledge**, **observed implementation behavior**, and **unvalidated interpretations** or **hypothetical scenarios**. Agreement with existing code is not, by itself, proof of business intent.
+- Investigate ambiguities and contradctions but never silently resolve a material conflict or turn a plausible scenario into a business rule.
+- Keep the work scoped to the domain concepts directly relevant to the task or provided context. This skill capturs the business model, it does not change code, behavior, or architecture.
 
 ## Workflow
 
@@ -108,5 +108,3 @@ Goal: Check integrity and report.
 - Unresolved questions appear in the owning `LANGUAGE.md` (terminology), `CONTEXT.md` (rules or scope), or `CONTEXT-MAP.md` (relationships), as appropriate.
 
 Report the files created or updated, significant modeling decisions and terminology changes, evidence/code discrepancies, and unresolved questions that affect interpretation. Do not paste the full documents unless requested.
-
-**CRITICAL:** If language, rules, or boundaries are materially ambiguous or contradictory and cannot be validated, document the competing interpretations and notify the user. Do not silently choose one.
