@@ -54,7 +54,7 @@ Validation is a decision gate for **new or conflicting consequential claims**, n
 
 Goal: Update the relevant domain documents.
 
-Read [references/document-templates.md](references/document-templates.md) fully for document outlines and placement guidance. Adapt them to existing useful structure instead of replacing maintained documents.
+Read [references/document-templates.md](references/document-templates.md) fully for document outlines and placement guidance. Follow the templates *exactly*. Do not add, remove or rename sections, or modify the documetn structure in any other way.
 
 #### Determine context placement
 
