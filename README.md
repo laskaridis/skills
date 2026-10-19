@@ -28,14 +28,8 @@ npx skills add laskaridis/skills@tdd
 # Install ddd
 npx skills add laskaridis/skills@ddd
 
-# Install event-storming
-npx skills add laskaridis/skills@event-storming
-
 # Install create-tasks
 npx skills add laskaridis/skills@create-tasks
-
-# Install refactor
-npx skills add laskaridis/skills@refactor
 ```
 
 ## Recommended workflow
