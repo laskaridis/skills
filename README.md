@@ -7,8 +7,9 @@ These skills are built for workflow with the following characteristics:
 1. Use a strong reasoning model to explore the domain and think through a feature.
 2. Lock that context into usable domain documents and a specification document.
 3. Turn the spec into tightly scoped tasks to be implemented by low reasoning coding agents.
-4. Implement tasks using a TDD loop (including refactoring), optionally within a ralph loop (AFK).
-5. Review and clean-up the final implementation.
+4. Disstill the business model and capture domain language and linguistic boundaries directly in the codebase.
+5. Implement tasks using a TDD loop (including refactoring), optionally within a ralph loop (AFK).
+6. Review and clean-up the final implementation.
 
 ## Installation
 
@@ -23,6 +24,9 @@ npx skills add laskaridis/skills@create-spec
 
 # Install tdd
 npx skills add laskaridis/skills@tdd
+
+# Install ddd
+npx skills add laskaridis/skills@ddd
 
 # Install event-storming
 npx skills add laskaridis/skills@event-storming
@@ -42,6 +46,7 @@ I usually use these skills when delivering non-trivial features:
 2. Use `create-spec` to preserve the agreed product and technical context as a feature spec.
 3. Use `create-tasks` to break the spec into small implementation tasks for lower-reasoning coding agents.
 5. Use `tdd` while implementing each behavior change so tests capture the intended behavior before production code changes.
+5. Use `ddd` to capture domain language following the lingustic boundaries imposed by the business model.
 
 This is a good fit for feature work where you want a repeatable handoff between planning and implementation.
 
@@ -50,3 +55,4 @@ This is a good fit for feature work where you want a repeatable handoff between 
 - `create-spec` is effective when the current conversation context already contains meaningful product and technical context.
 - `create-tasks` is only as good as the spec you feed into it, so make sure you review `spec.md` before delegating implementation.
 - `tdd` works best when the expected behavior is concrete enough to express as a failing test.
+- `ddd` makes certain high-level (and reasonable) assumptions about your project strucutre. Make sure to read the skill before using it to establish compliance to your specific case.
