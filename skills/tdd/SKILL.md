@@ -26,6 +26,8 @@ Before you write a single line of code:
   * Avoid introducing new interfaces soley to facilitate testing.
 - Create internally a list of test scenarios that cover the expected behavior and edge cases. Map each scenario to its corresponding specification requirement and selected testing boundary.
 
+For non-trivial behavior changes, delegate an independent review of the scenario list and testing boundaries to a subagent. Provide the specification and relevant project contracts. Request evidence-backed omissions, unsupported expectations, and boundary concerns without file edits. Assess the findings before starting RED.
+
 IMPORTANT: Expected outcomes of tests must be independent of the implementation. Derive expectations directly from specifications, requirements and acceptance criteria provided by the user.
 
 2. RED - Write a failing test for the next test scenario in the list.
