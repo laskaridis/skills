@@ -42,6 +42,8 @@ Before you write a single line of code:
 - Ensure you record the verification evidence and update the task status before committing them together with the implementation.
 - Respond with the appropriate response contract based on the stop condition, as explained below.
 
+For non-trivial changes, delegate a read-only review of the selected task’s implementation against its specification, acceptance criteria, and scope. Assess concrete findings and resolve completion blockers before marking the task complete.
+
 ## Constraints
 
 - Validation tasks are read-only except for evidence/reporting files such as the task list provided by the user and progress.txt.
