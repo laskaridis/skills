@@ -2,8 +2,6 @@
 
 Use these outlines when creating files. Replace bracketed guidance with evidence-backed content; omit optional sections without useful content. For required information that is unknown, say so briefly under open questions. Preserve useful existing structure when updating a document.
 
-Keep accepted business knowledge separate from implementation observations and unvalidated interpretations. Hypothetical scenarios can challenge a model, but their expected outcomes must not be documented as accepted rules until validated. Use relative links from each document's own location.
-
 ## CONTEXT.md
 
 Describe the boundary and the model's responsibilities. Keep terminology definitions in the companion language document.
@@ -17,7 +15,6 @@ Describe the boundary and the model's responsibilities. Keep terminology definit
 or provisional, and the evidence for it.]
 
 - Owns: [Capabilities, decisions, and domain information governed here.]
-- Outside scope: [Known exclusions and responsibilities belonging elsewhere.]
 - Participants: [Known domain actors; model-owning team only if established.]
 
 ## Model and business rules
@@ -41,11 +38,6 @@ In multi-context projects, link to the root map for relationship details.]
 [Optional: consequential accepted domain modeling decisions. Record the choice,
 why it was made, relevant alternatives and confirming source. Link an existing
 ADR when the reasoning is primarily architectural. Omit this section if none.]
-
-## Implementation observations
-
-[Optional: current code locations and material mismatches with agreed intent.
-Do not present implementation behavior as an agreed business requirement.]
 
 ## Open questions
 

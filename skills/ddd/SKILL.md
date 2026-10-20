@@ -13,6 +13,7 @@ Understand and preserv the business model to help agents write code that aligns 
 - Distinguish between **accepted business knowledge**, **observed implementation behavior**, and **unvalidated interpretations** or **hypothetical scenarios**. Agreement with existing code is not, by itself, proof of business intent.
 - Investigate ambiguities and contradctions but never silently resolve a material conflict or turn a plausible scenario into a business rule.
 - Keep the work scoped to the domain concepts directly relevant to the task or provided context. This skill capturs the business model, it does not change code, behavior, or architecture.
+- Capture domain knowledge independently of the current feature. Keep links to specs, iteration scope, and implementation details in feature artifacts or the task report instead.
 
 ## Workflow
 
