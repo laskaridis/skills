@@ -30,6 +30,7 @@ You are in **RESTRICTED EDIT MODE**. You are not allowed to modify any files in 
 
 4. Validate the finished spec against that extracted context, checking both omissions and unsupported addition:
    - Check that stories and acceptance criteria describe consistently and fully the target behavior.
+   - Check that acceptance criteria codes are unique across all stories in the spec, following the template's numbering rules, and any references identify the intended criteria.
    - Check that the spec does not introduces unrequested scope.
    - Resolve inconsistencies using the conversation and codebase. Record unresolved material conflicts under "Clarifications" needed rather than choosing silently.
 

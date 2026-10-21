@@ -59,6 +59,8 @@ Use Gherkin/BDD for acceptance criteria. Use a concise checklist or table when a
 - **AC-001:** Given <initial condition(s)>, When <action>, Then <expected outcome>. Example: "Given the user has items in their cart, When they click "Checkout", Then they are redirected to the billing page."
 - etc.
 
+Make sure that acceptance criteria codes are monotonically increasing and unique across use cases. Example: If use csase `UC-001` includes `AC-001` then acceptance criteria for use case `UC-002` start with `AC-002`.
+
 ## Assumptions
 
 - Identify here any assumptions that underly the agreed scope.
