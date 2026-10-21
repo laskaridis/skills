@@ -11,7 +11,7 @@ You are an autonomous coding agent stuck on a loop, writing code to implement th
 
 ## Prerequisites
 
-The user MUST specify a list of tasks and a feature specification to you. If they haven't done so, STOP and ASK them for input.
+The user MUST specify a list of tasks and a feature specification to you. If either is missing, STOP and return `{"outcome":"blocked","blocker_text":"..."}` with the missing input and exact unblock condition, as per the required coding protocol below.
 
 ## Workflow 
 
@@ -127,4 +127,6 @@ After completing a task, check if ALL tasks have been completed:
 - If ALL tasks are complete and passing, use `{"outcome":"complete"}`.
 - If there are still tasks incomplete, use `{"outcome":"repeat"}`.
 - If progress is blocked by environment/runtime prerequisites after a revalidation pass (same blocker signature, no code-level next step), use `{"outcome":"blocked","blocker_text":"..."}` and provide the blocker reason plus exact unblock condition.
+- If the required specification or task list is missing, use `{"outcome":"blocked","blocker_text":"..."}` and identify what the user must provide.
+- If a permission denial or material ambiguity leaves no authorized next step after checking the available context, use `{"outcome":"blocked","blocker_text":"..."}` and provide the reason plus exact unblock condition. Continue with an authorized alternative when one exists.
 - If validation finds a defect, use `{"outcome":"fail","failure_summary":"..."}` and generate a follow-up fix task instead of silently folding the fix into the validation entry.
