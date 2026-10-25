@@ -4,169 +4,111 @@ description: Convert a specification document into a list of tasks that can be e
 argument-hint: Where is the specification document located that you want to convert into tasks?
 ---
 
-## Purpose
+## Goal
 
-Your goal is to convert a specification file into a strict implementation task plan to be implemented by low-reasoning coding agents without the mediation of a human developer.
+Convert a specification file into an implementation task plan which coding agents can follow to produce a feature aligned to the given specifications.
 
-The output must contain small, tightly bounded, implementation-ready tasks with clear instructions, explicit scope, dependencies, and verifiable acceptance criteria.
+The task plan must assume that it will be implemented without the mediation of a human developer.
 
-## Inputs
+The output must contain coherent, tightly bounded, implementation-ready tasks with clear verifiable acceptance criteria.
+
+## Prerequisite
 
 The user is required to provide a specification file. If none has been provided then stop and ask the user to provide one.
 
-## Constraints
+## Core rules
 
-You are running in **RESTRICTED WRITE MODE**. This means that you are not allowed to add or modify any repository files other than the requested output task list.
+1. Stories are broken down into tasks. Each task must be traced back to one story and at least one acceptance criterion.
+2. Each task must have one clear, specific and unambiguous objective. Avoid unclear, vague and ambiguous task goals that would allow the model to interpret.
+3. Each task must include clear, unambiguous and locally verifiable acceptance criteria which verify observable behavior.
+4. Do not resolve ambiguity yourself. Ask the user for clarifications as needed:
+  * If you identify ambiguity in the specs which materially affects architecture, behavior, or task decomposition, stop and ask the user for clarification.
+  * If you identify a gap in the specifications that would make it impossible to implement or verify a task, stop and ask the user for clarification.
+  * Otherwise, make conservative assumptions and explicitly document them in `assumptions`.
 
-## Task generation guidelines
+## Workflow
 
-1. Create tasks with clear goals:
+### 1. Understand.
 
-- Each task must have one clear, specific and unambiguous objective.
-- Avoid unclear, vague and ambiguous task goals that would allow the model to second guess.
-- It is crucial by reading the task a low-reasoning coding agent avoids guessing what it needs to implement or how to implement it.
+Goal: Gain enough knowledge so you can split the specification into a task plan that delivers the intended feature and complies to the project's domain language, architecture, conventions and quality characteristics.
 
-2. Create small tasks:
+Before you write any tasks:
 
-- Design for narrowly scoped tasks. Avoid broad cross-cutting tasks unless required by the specification.
-- Prefer many small tasks over broad tasks.
+- Read the user-provided spec file and task list to understand the broader context.
+- Inspect the relevant codebase as needed to build understanding. Treat observations about code as provisional as they may change during task execution.
+- Make sure you look for and read any relevant context about:
+  - Project architecture
+  - Ubiquitous domain language used
+  - Coding and testing guidelines
+  - Project conventions
 
-3. Split tasks with too broad scope:
+### 2. Decompose.
 
-- Split a task if it combines more than one major concern.
-- Split a task if a low-reasoning agent would need to make more than one architectural or policy decision while implementing it.
+Goal: Decompose the spec into a prioritized list of tasks.
 
-4. Create verifiable tasks:
+- Break down each user story into prioritized tasks.
+- Derive tasks directly from a story's acceptance criteria. If a task cannot be directly traced back to a specific user story and acceptance criterion reject it.
+- For each task prefer the smallest coherent slice of independently verifiable behavior.
+- A task may cross architectural layers to implement and verify that behavior end-to-end.
+- Leave implementation choices to the implementor.
+- Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
+- Write the plan into a valid JSON file - no markdown, no prose, no comments.
+- Unless instructed otherwise from the user:
+  - Place the task plan in the same directory as the specification.
+  - Base the task plan name on the specification. Example: if the spec is named `<spec name>.spec.md` then name the task plan as `<spec name>.plan.json`.
+- Use the following schema EXACTLY:
+  ```json
+  {
+    "spec_path": "<path to the specification file relative to current repo root>",
+    "tasks": [
+      {
+        "id": "TASK-001",
+        "title": "<less or equal to 80 characters, imperative>",
+        "objective": "<1 sentence description of what needs to be accomplished>",
+        "status": "<pending|completed>",
+        "story_addressed": "<the id of the user story or requirement this task traces back to>",
+        "acceptance_criteria_addressed": [
+          "<the id of the functional or non-functional acceptance criterion this task traces back to>"
+        ],
+        "acceptance_criteria": [
+          "<clear and locally verifiable condition for this task to be complete>"
+        ],
+        "out_of_scope": [
+          "<description of anything that is explicitly out of scope for this task>"
+        ],
+        "existing_context": [
+          "<description of any relevant existing code, architecture, or design that should be taken into account when implementing this task>"
+        ],
+        "constraints": [
+          "<description of anything critical that must constrain this implementation>"
+        ],
+        "assumptions": [
+          "<any assumptions you are making about the implementation, the codebase, or the specifications that should be documented for future reference>"
+        ],
+        "verified_by": [
+   .      "Automated test verifying that duplicate wishlist additions do not create duplicate entries",
+          "Existing regression tests pass"
+        ],
+        "dependencies": []
+      }
+    ]
+  }
+  ```
 
-- Each task must include clear, unambiguous and locally verifiable acceptance criteria which verify observable behavior.
-- Acceptance criteria must be locally observable from specification.
-- Avoid subjective acceptance criteria such as “keeps the design clear”, “reflects the rewrite properly”, or “is suitable for later use”.
+### 3. Verify.
 
-5. Provide clear implementation guidelines for each task:
-
-- Provide clear and unambiguous implementation guidelines as if you are explaining to a junior developer how to implement the task.
-- Avoid vague instructions such as “refactor for clarity”, “optimize the implementation”, or “implement in a clean way”.
-
-4. Link tasks to an explicit user story or requirement:
-
-- If a task cannot be directly traced back to a specific user story or requirement, either remove it or narrow it.
-
-5. Ask the user for clarifications as needed:
-
-- If you identify ambiguity in the specs which materially affects architecture, behavior, or task decomposition, stop and ask the user for clarification.
-- If you identify a gap in the specifications that would make it impossible to implement or verify a task, stop and ask the user for clarification.
-- Otherwise, make conservative assumptions and explicitly document them in implementation_notes.
-
-## Workflow 
-
-1. First read the entire specification file before you start generating tasks.
-
-2. Inspect the repository as needed to get context on existing structure and likely affected files.
-
-3. Generate a prioritized list of tasks following the task generation guidelines.
-
-4. Review all tasks using the final validation checklist below.
-
-## Output
-
-Write a `tasks.json` file in the same directory as the specification. Include only a valid JSON - no markdown, no prose, no comments.
-
-Use the following schema EXACTLY:
-```
-{
-  "spec_path": "<path to the specification file relative to current repo root>",
-  "tasks": [
-    {
-      "id": "TASK-001",
-      "title": "<less or equal to 80 characters, imperative>",
-      "objective": "<1 sentence description of what needs to be accomplished>",
-      "status": "<pending|completed>",
-      "story_addressed": "<the id of the user story or requirement this task traces back to>",
-      "requirements_addressed": [
-        "<the id of the functional or non-fucnctional requirement this task traces back to>"
-      ],
-      "out_of_scope": [
-        "<description of anything that is explicitly out of scope for this task>"
-      ],
-      "existing_context": [
-        "<description of any relevant existing code, architecture, or design that should be taken into account when implementing this task>"
-      ],
-      "constraints": [
-        "<description of anything critical that must constraint this implementation>"
-      ],
-      "implementation_guidelines": [
-        "<any specific instructions or guidelines for the implementation of this task>"
-      ],
-      "acceptance_criteria": [
-        "<clear and locally verifiable conditions that must be satisfied for this task to be considered complete>"
-      ],
-      "assumptions": [
-        "<any assumptions you are making about the implementation, the codebase, or the specifications that should be documented for future reference>"
-      ],
-      "dependencies": ["TASK-000"]
-    }
-  ]
-}
-```
-
-### GOOD example of a task following the guidelines:
-```
-{
-  "id": "TASK-001",
-  "title": "Prevent duplicate products in wishlist",
-  "objective": "Ensure that adding the same product to a wishlist more than once does not create duplicate wishlist entries.",
-  "status": "pending",
-  "story_addressed": "US-001",
-  "requirements_addressed": [
-    "FR-002"
-  ],
-  "out_of_scope": [
-    "Do not change the wishlist API contract.",
-    "Do not change the database schema.",
-    "Do not modify product catalog lookup behavior.",
-    "Do not refactor unrelated wishlist methods."
-  ],
-  "existing_context": [
-    "WishlistService.addProduct(userId, productId) is the existing entry point for adding products to a wishlist.",
-    "WishlistRepository.findByUserId(userId) returns the current wishlist for a user.",
-    "WishlistServiceTest already contains tests for adding a product to a wishlist."
-  ],
-  "constraints": [
-    "Use the existing WishlistRepository methods if they are sufficient.",
-    "Do not introduce a new duplicate-checking abstraction unless required by the existing code structure.",
-    "Preserve existing public method signatures."
-  ],
-  "implementation_guidelines": [
-    "Load the current wishlist before adding the requested product.",
-    "Check whether the wishlist already contains an item with the same productId.",
-    "If the product already exists, return the wishlist unchanged.",
-    "If the product does not exist, add it using the existing persistence flow.",
-    "Add or update tests in WishlistServiceTest to cover the duplicate-product case."
-  ],
-  "acceptance_criteria": [
-    "When a product is added to an empty wishlist, the wishlist contains exactly one item for that product.",
-    "When the same product is added twice, the wishlist still contains exactly one item for that product.",
-    "No existing WishlistServiceTest test fails.",
-    "No public API signature is changed."
-  ],
-  "assumptions": [
-    "Product identity is determined by productId.",
-    "Returning the unchanged wishlist is the expected behavior when a duplicate product is added."
-  ],
-  "dependencies": ["TASK-000"]
-}
-```
-
-## Final verification checklist
+Goal: Ensure that the task plan delivers the specified value following the project's architecture and conventions.
 
 Before returning, verify that all of the following conditions are satisfied:
 
-[ ] Output is valid JSON file placed under the same directory as the specification file with the name `tasks.json`.
-[ ] You completed an internal requirement-to-task coverage pass before returning.
-[ ] Every task has one clear, specific and unambiguous outcome that aligns with the specification.
-[ ] Every task has a small, clear and tightly bounded file scope.
-[ ] Every task has clear, unambiguous and verifiable acceptance criteria.
-[ ] No task requires second guessing how it will be implemented or how it will be verified.
-[ ] Task dependencies reference valid IDs and there are no circular dependencies between tasks.
-[ ] All the user stories and requirements mentioned in the specification are covered by at least one task.
-[ ] Each task can be traced back directly to a user story or a functional/non-functional requirement explicitly mentioned in the task.
+- Every specification acceptance criterion is covered by at least one task.
+- The combined tasks preserve the specified behaviour, including failure cases, invariants and boundary conditions.
+- Reject tasks that introduce behaviour unsupported by the specification.
+- Output is valid JSON file, named appropriately and placed in the correct location.
+- Each task can be traced back directly to a user story and acceptance criterion explicitly mentioned in the task.
+- Task dependencies reference valid IDs and there are no circular dependencies between tasks.
+- Every task has one clear, specific and unambiguous outcome that aligns with the specification.
+- Every task has a small, clear and tightly bounded file scope.
+- Every task has clear, unambiguous and verifiable acceptance criteria.
+- No task dictated low-level implementation details that constraint the implementor.
+- The task plan can be executed by an autonomous coding agent without human steering.
