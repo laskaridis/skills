@@ -52,6 +52,27 @@ Goal: Decompose the spec into a prioritized list of tasks.
 - A task may cross architectural layers to implement and verify that behavior end-to-end.
 - Leave implementation choices to the implementor.
 - Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
+
+### 3. Verify.
+
+Goal: Ensure that the task plan delivers the specified value following the project's architecture and conventions.
+
+Before returning, verify that all of the following conditions are satisfied:
+
+- Every specification acceptance criterion is covered by at least one task.
+- The combined tasks preserve the specified behaviour, including failure cases, invariants and boundary conditions.
+- Reject tasks that introduce behaviour unsupported by the specification.
+- Output is valid JSON file, named appropriately and placed in the correct location.
+- Each task can be traced back directly to a user story and acceptance criterion explicitly mentioned in the task.
+- Task dependencies reference valid IDs and there are no circular dependencies between tasks.
+- Every task has one clear, specific and unambiguous outcome that aligns with the specification.
+- Every task has a small, clear coherent and tightly bounded scope.
+- Every task has clear, unambiguous and verifiable acceptance criteria.
+- No task dictated low-level implementation details that constraint the implementor.
+- The task plan can be executed by an autonomous coding agent without human steering.
+
+## Expected output
+
 - Write the plan into a valid JSON file - no markdown, no prose, no comments.
 - Unless instructed otherwise from the user:
   - Place the task plan in the same directory as the specification.
@@ -94,21 +115,3 @@ Goal: Decompose the spec into a prioritized list of tasks.
     ]
   }
   ```
-
-### 3. Verify.
-
-Goal: Ensure that the task plan delivers the specified value following the project's architecture and conventions.
-
-Before returning, verify that all of the following conditions are satisfied:
-
-- Every specification acceptance criterion is covered by at least one task.
-- The combined tasks preserve the specified behaviour, including failure cases, invariants and boundary conditions.
-- Reject tasks that introduce behaviour unsupported by the specification.
-- Output is valid JSON file, named appropriately and placed in the correct location.
-- Each task can be traced back directly to a user story and acceptance criterion explicitly mentioned in the task.
-- Task dependencies reference valid IDs and there are no circular dependencies between tasks.
-- Every task has one clear, specific and unambiguous outcome that aligns with the specification.
-- Every task has a small, clear coherent and tightly bounded scope.
-- Every task has clear, unambiguous and verifiable acceptance criteria.
-- No task dictated low-level implementation details that constraint the implementor.
-- The task plan can be executed by an autonomous coding agent without human steering.
