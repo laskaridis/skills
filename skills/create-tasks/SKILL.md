@@ -108,7 +108,7 @@ Before returning, verify that all of the following conditions are satisfied:
 - Each task can be traced back directly to a user story and acceptance criterion explicitly mentioned in the task.
 - Task dependencies reference valid IDs and there are no circular dependencies between tasks.
 - Every task has one clear, specific and unambiguous outcome that aligns with the specification.
-- Every task has a small, clear and tightly bounded file scope.
+- Every task has a small, clear coherent and tightly bounded scope.
 - Every task has clear, unambiguous and verifiable acceptance criteria.
 - No task dictated low-level implementation details that constraint the implementor.
 - The task plan can be executed by an autonomous coding agent without human steering.
