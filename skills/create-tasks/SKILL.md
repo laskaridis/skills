@@ -86,7 +86,7 @@ Goal: Decompose the spec into a prioritized list of tasks.
           "<any assumptions you are making about the implementation, the codebase, or the specifications that should be documented for future reference>"
         ],
         "verified_by": [
-   .      "Automated test verifying that duplicate wishlist additions do not create duplicate entries",
+          "Automated test verifying that duplicate wishlist additions do not create duplicate entries",
           "Existing regression tests pass"
         ],
         "dependencies": []
