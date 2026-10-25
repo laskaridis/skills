@@ -19,12 +19,10 @@ The user is required to provide a specification file. If none has been provided 
 ## Core rules
 
 1. Stories are broken down into tasks. Each task must be traced back to one story and at least one acceptance criterion.
-2. Each task must have one clear, specific and unambiguous objective. Avoid unclear, vague and ambiguous task goals that would allow the model to interpret.
-3. Each task must include clear, unambiguous and locally verifiable acceptance criteria which verify observable behavior.
-4. Do not resolve ambiguity yourself. Ask the user for clarifications as needed:
-  * If you identify ambiguity in the specs which materially affects architecture, behavior, or task decomposition, stop and ask the user for clarification.
-  * If you identify a gap in the specifications that would make it impossible to implement or verify a task, stop and ask the user for clarification.
-  * Otherwise, make conservative assumptions and explicitly document them in `assumptions`.
+2. Each task has a small, clear, specific and unambiguous objective. Avoid unclear, vague and ambiguous task goals that would allow the model to interpret.
+3. Each task has clear, unambiguous and locally verifiable acceptance criteria which verify observable behavior.
+4. Identify decisions that cannot safely be delegated to an implementation agent.
+5. Do not resolve singificant ambiguity yourself, instead ask the user for clarifications as needed. 
 
 ## Workflow
 
@@ -47,11 +45,11 @@ Before you write any tasks:
 Goal: Decompose the spec into a prioritized list of tasks.
 
 - Break down each user story into prioritized tasks.
-- Derive tasks directly from a story's acceptance criteria. If a task cannot be directly traced back to a specific user story and acceptance criterion reject it.
-- For each task prefer the smallest coherent slice of independently verifiable behavior.
+- Schedule tasks with the highest technical risk as early as their dependencies allow.
+- Every task must contribute directly to at least one specified acceptance criterion or be a necessary prerequisite for delivering one.
+- For each task prefer the smallest, coherent, vertical slice of independently verifiable behavior.
 - A task may cross architectural layers to implement and verify that behavior end-to-end.
-- Leave implementation choices to the implementor.
-- Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
+- Leave implementation choices to the implementor. Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
 
 ### 3. Verify.
 
@@ -60,16 +58,17 @@ Goal: Ensure that the task plan delivers the specified value following the proje
 Before returning, verify that all of the following conditions are satisfied:
 
 - Every specification acceptance criterion is covered by at least one task.
-- The combined tasks preserve the specified behaviour, including failure cases, invariants and boundary conditions.
-- Reject tasks that introduce behaviour unsupported by the specification.
+- All tasks collectively implement the specified feature. Do not assume that independently passing task-level tests establish feature-level correctness.
+- No task introduces behaviour unsupported by the specification.
 - Output is valid JSON file, named appropriately and placed in the correct location.
-- Each task can be traced back directly to a user story and acceptance criterion explicitly mentioned in the task.
+- Each task can be traced back directly to a user story and at least one acceptance criterion.
 - Task dependencies reference valid IDs and there are no circular dependencies between tasks.
 - Every task has one clear, specific and unambiguous outcome that aligns with the specification.
-- Every task has a small, clear coherent and tightly bounded scope.
+- Every task has a small, clear, coherent and tightly bounded scope.
 - Every task has clear, unambiguous and verifiable acceptance criteria.
 - No task dictated low-level implementation details that constraint the implementor.
 - The task plan can be executed by an autonomous coding agent without human steering.
+
 
 ## Expected output
 
@@ -87,7 +86,7 @@ Before returning, verify that all of the following conditions are satisfied:
         "title": "<less or equal to 80 characters, imperative>",
         "objective": "<1 sentence description of what needs to be accomplished>",
         "status": "<pending|completed>",
-        "story_addressed": "<the id of the user story or requirement this task traces back to>",
+        "story_enabled": "<the id of the user story or requirement this task traces back to>",
         "acceptance_criteria_addressed": [
           "<the id of the functional or non-functional acceptance criterion this task traces back to>"
         ],
@@ -98,17 +97,13 @@ Before returning, verify that all of the following conditions are satisfied:
           "<description of anything that is explicitly out of scope for this task>"
         ],
         "existing_context": [
-          "<description of any relevant existing code, architecture, or design that should be taken into account when implementing this task>"
+          "<optionally, a description of any materially important relevant context that should be taken into account when implementing this task>"
         ],
         "constraints": [
-          "<description of anything critical that must constrain this implementation>"
+          "<optionally, a description of anything critical that must constrain this implementation>"
         ],
         "assumptions": [
-          "<any assumptions you are making about the implementation, the codebase, or the specifications that should be documented for future reference>"
-        ],
-        "verified_by": [
-          "Automated test verifying that duplicate wishlist additions do not create duplicate entries",
-          "Existing regression tests pass"
+          "<optionally, any assumptions you are making about the implementation, the codebase, or the specifications that should be documented for future reference>"
         ],
         "dependencies": []
       }
