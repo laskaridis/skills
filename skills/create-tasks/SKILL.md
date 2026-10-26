@@ -10,18 +10,24 @@ Convert a specification file into an implementation task plan which coding agent
 
 The task plan must assume that it will be implemented without the mediation of a human developer.
 
-The output must contain coherent, tightly bounded, implementation-ready tasks with clear verifiable acceptance criteria.
+The output must contain coherent, tightly bounded, implementation-ready tasks with clear verifiable completion criteria.
 
 ## Prerequisite
 
 The user is required to provide a specification file. If none has been provided then stop and ask the user to provide one.
 
+## How does a good plan looks like
+
+1. **Correctness.** It steers coding agents to produce the itended feature by specifying what must be true and what constraints must hold.
+2. **Autonomy.** If does not prescribe how the code must be written. Agents can implement each task without asking for clarifications.
+3. **Verifiability.** It explains how success for each task will be demonstrated. 
+
 ## Core rules
 
-1. Stories are broken down into tasks. Each task must be traced back to one story and at least one acceptance criterion.
-2. Each task has a small, clear, specific and unambiguous objective. Avoid unclear, vague and ambiguous task goals that would allow the model to interpret.
-3. Each task has clear, unambiguous and locally verifiable acceptance criteria which verify observable behavior.
-4. Identify decisions that cannot safely be delegated to an implementation agent.
+1. Break down stories into tasks. Each task must be traced back to one story and at least one acceptance criterion.
+2. Ensure each task has a small, clear, specific and unambiguous objective. Avoid unclear, vague and ambiguous task goals that would allow the model to interpret.
+3. Ensure each task has clear, unambiguous and locally verifiable completion criteria which verify observable behavior in automation.
+4. Identify any decisions that cannot safely be delegated to an implementation agent.
 5. Do not resolve singificant ambiguity yourself, instead ask the user for clarifications as needed. 
 
 ## Workflow
@@ -65,7 +71,7 @@ Before returning, verify that all of the following conditions are satisfied:
 - Task dependencies reference valid IDs and there are no circular dependencies between tasks.
 - Every task has one clear, specific and unambiguous outcome that aligns with the specification.
 - Every task has a small, clear, coherent and tightly bounded scope.
-- Every task has clear, unambiguous and verifiable acceptance criteria.
+- Every task has clear, unambiguous and verifiable completion criteria that can be verified in automation.
 - No task dictated low-level implementation details that constraint the implementor.
 - The task plan can be executed by an autonomous coding agent without human steering.
 
@@ -83,27 +89,18 @@ Before returning, verify that all of the following conditions are satisfied:
     "tasks": [
       {
         "id": "TASK-001",
-        "title": "<less or equal to 80 characters, imperative>",
-        "objective": "<1 sentence description of what needs to be accomplished>",
+        "objective": "<1 sentence description of what needs to be accomplished, what is the obervable outcome>",
         "status": "<pending|completed>",
         "story_enabled": "<the id of the user story or requirement this task traces back to>",
         "acceptance_criteria_addressed": [
           "<the id of the functional or non-functional acceptance criterion this task traces back to>"
         ],
-        "acceptance_criteria": [
-          "<clear and locally verifiable condition for this task to be complete>"
-        ],
-        "out_of_scope": [
-          "<description of anything that is explicitly out of scope for this task>"
-        ],
-        "existing_context": [
-          "<optionally, a description of any materially important relevant context that should be taken into account when implementing this task>"
+        "completion_criteria": [
+          "<task specific contidions that must be true for the task to be considered complete>",
+          "<do not copy the acceptance criteria from the specification here>"
         ],
         "constraints": [
           "<optionally, a description of anything critical that must constrain this implementation>"
-        ],
-        "assumptions": [
-          "<optionally, any assumptions you are making about the implementation, the codebase, or the specifications that should be documented for future reference>"
         ],
         "dependencies": []
       }
