@@ -6,11 +6,7 @@ argument-hint: Where is the specification document located that you want to conv
 
 ## Goal
 
-Convert a specification file into an implementation task plan which coding agents can follow to produce a feature aligned to the given specifications.
-
-The task plan must assume that it will be implemented without the mediation of a human developer.
-
-The output must contain coherent, tightly bounded, implementation-ready tasks with clear verifiable completion criteria.
+Convert a specification file into an implementation task plan which coding agents can follow to produce a feature aligned to the given specifications. The task plan must assume that it will be implemented without the mediation of a human developer.
 
 ## Prerequisite
 
@@ -24,10 +20,10 @@ The user is required to provide a specification file. If none has been provided 
 
 ## Core rules
 
-1. Break down stories into tasks. Each task must be traced back to one story and at least one acceptance criterion.
-2. Ensure each task has a small, clear, specific and unambiguous objective. Avoid unclear, vague and ambiguous task goals that would allow the model to interpret.
-3. Ensure each task has clear, unambiguous and locally verifiable completion criteria which verify observable behavior in automation.
-4. Identify any decisions that cannot safely be delegated to an implementation agent.
+1. Size tasks by cohesive capability, not by acceptance criterion. A task may cover many acceptance criteria and vice versa.
+2. Each task must enable some story or acceptance criterion mentioned in the specification.
+3. Each task must have clear, unambiguous and locally verifiable completion criteria which verify observable behavior.
+4. Identify any decisions that cannot safely be delegated to an implementation agent, such as module boundaries in a codebase with no established architecture.
 5. Do not resolve singificant ambiguity yourself, instead ask the user for clarifications as needed. 
 
 ## Workflow
@@ -46,35 +42,45 @@ Before you write any tasks:
   - Coding and testing guidelines
   - Project conventions
 
-### 2. Decompose.
+### 2. Design.
 
-Goal: Decompose the spec into a prioritized list of tasks.
+Goal: Identify appropriate implementation boundaries around which tasks can be sliced.
 
-- Break down each user story into prioritized tasks.
-- Schedule tasks with the highest technical risk as early as their dependencies allow.
-- Every task must contribute directly to at least one specified acceptance criterion or be a necessary prerequisite for delivering one.
-- For each task prefer the smallest, coherent, vertical slice of independently verifiable behavior.
+- If the project or the specification already defines an architecture, use it. 
+- Otherwise, outline the minimal set of coherent modules needed to deliver the feature:
+  - Prefer a signle responsibility per module. ASK: What reason has this module to change?
+  - Prefer fewer deep (i.e. do a lot of useful work) modules with small interfaces (have minimal surface areas).
+  - Add a module only when it isolates an external boundary or a responsibility that would otherwise be mixed into another.
+  - Document your design in file `<spec name>.design.md` located in the same folder as the specification.
+- If the design requires a product or architectural choice the specification does not settle, ask the user.
+
+### 3. Decompose.
+
+Goal: Decompose the design into a prioritized list of tasks that a code agent can implement.
+
+- Break down the design into a prioritized list of tasks.
+- Focus each task on one coheasive slice of independently verifiable capability.
+- Every task must contribute directly to at least one story or acceptance criterion or be a necessary prerequisite for delivering one.
 - A task may cross architectural layers to implement and verify that behavior end-to-end.
 - Leave implementation choices to the implementor. Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
+- Schedule tasks with the highest technical risk as early as their dependencies allow.
 
-### 3. Verify.
+### 4. Verify.
 
 Goal: Ensure that the task plan delivers the specified value following the project's architecture and conventions.
 
 Before returning, verify that all of the following conditions are satisfied:
 
 - Every specification acceptance criterion is covered by at least one task.
-- All tasks collectively implement the specified feature. Do not assume that independently passing task-level tests establish feature-level correctness.
-- No task introduces behaviour unsupported by the specification.
+- All tasks collectively implement the specified feature. 
+- No task introduces behaviours unsupported by the specification.
 - Output is valid JSON file, named appropriately and placed in the correct location.
-- Each task can be traced back directly to a user story and at least one acceptance criterion.
+- Each task enabled at least one user story or one acceptance criterion.
 - Task dependencies reference valid IDs and there are no circular dependencies between tasks.
-- Every task has one clear, specific and unambiguous outcome that aligns with the specification.
-- Every task has a small, clear, coherent and tightly bounded scope.
-- Every task has clear, unambiguous and verifiable completion criteria that can be verified in automation.
-- No task dictated low-level implementation details that constraint the implementor.
+- Every task has one cohesive, specific and unambiguous outcome that aligns with the specification.
+- Every task has clear, unambiguous and completion criteria that can be verified in automation.
+- No task dictates low-level implementation details that constraint the implementor.
 - The task plan can be executed by an autonomous coding agent without human steering.
-
 
 ## Expected output
 
@@ -91,9 +97,11 @@ Before returning, verify that all of the following conditions are satisfied:
         "id": "TASK-001",
         "objective": "<1 sentence description of what needs to be accomplished, what is the obervable outcome>",
         "status": "<pending|completed>",
-        "story_enabled": "<the id of the user story or requirement this task traces back to>",
+        "stories_enabled": [
+          "<the id of the user story enabled by this task>"
+        ],
         "acceptance_criteria_addressed": [
-          "<the id of the functional or non-functional acceptance criterion this task traces back to>"
+          "<the id of the functional or non-functional acceptance criterion this task enables>"
         ],
         "completion_criteria": [
           "<task specific contidions that must be true for the task to be considered complete>",
