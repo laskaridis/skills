@@ -51,7 +51,10 @@ Goal: Identify appropriate implementation boundaries around which tasks can be s
   - Prefer a signle responsibility per module. ASK: What reason has this module to change?
   - Prefer fewer deep (i.e. do a lot of useful work) modules with small interfaces (have minimal surface areas).
   - Add a module only when it isolates an external boundary or a responsibility that would otherwise be mixed into another.
-  - Document your design in file `<spec name>.design.md` located in the same folder as the specification.
+- Lightly document your design in file `<spec name>.design.md` located in the same folder as the specification:
+  - Modules their responsibility and interfaces
+  - Dependencies and flow of execution
+  - Key architectural decisions
 - If the design requires a product or architectural choice the specification does not settle, ask the user.
 
 ### 3. Decompose.
