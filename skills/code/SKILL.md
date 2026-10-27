@@ -114,6 +114,7 @@ The JSON object MUST use the following shape - written in a single line with no 
     "<name of agent skill used during this iteration>"
   ]
 }
+```
 
 Rules:
 
