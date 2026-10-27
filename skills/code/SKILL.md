@@ -29,7 +29,6 @@ Before you write a single line of code:
 - Use the tdd skill (RED -> GREEN -> REFACTOR) to implement that single task. Check for any relevant skills available.
 - Follow the established ubiquitous domain language used in the project, don't invent your own.
 - Follow the established architecture, domain boundaries, and project conventions. Do not make material architectural or product-policy decisions that contradict or extend the specification.
-- Constrain your changes strictly to the scope of the task implemented. Do not introduce unrelated behavior, speculative abstractions, or unnecessary refactoring.
 - Assume you are working in the correct isolated project workspace for this feature. No need to create git branch or worktree.
 - Prefer minimal, cohesive changes that satisfy the task's acceptance criteria.
 - Keep notes of your progress using the progress report format shown below (create it if missing).
@@ -102,14 +101,19 @@ Treat these instructions as a stable API between you and host coding harness. Th
 
 ### Response 
 
-Your final response to the user MUST be exactly one JSON object and nothing else. The response will be parsed by the harness so do not wrap it in markdown fences or add prose before or after the object.
+Your final response to the user MUST be exactly one JSON object and nothing else. The json object must appear in a single line with no line breaks. The response will be parsed by the harness so do not wrap it in markdown fences or add prose before or after the object.
 
-The JSON object MUST use one of these shapes:
-
-- `{"outcome":"repeat"}`
-- `{"outcome":"complete"}`
-- `{"outcome":"blocked","blocker_text":"..."}`
-- `{"outcome":"fail","failure_summary":"..."}`
+The JSON object MUST use the following shape - written in a single line with no line breaks:
+```json
+{
+  "task_implemented":"<reference to task worked during the iteration>",
+  "outcome":"<repeat|complete|blocked|fail>",
+  "blocker_text":"<explains the blocking condition - must be present if outcome is blocked>",
+  "failure_summary":"<explains the failure condition - must be present if outcome is fail>",
+  "skills_used":[
+    "<name of agent skill used during this iteration>"
+  ]
+}
 
 Rules:
 
