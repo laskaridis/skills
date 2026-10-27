@@ -46,26 +46,30 @@ Before you write any tasks:
 
 Goal: Identify appropriate implementation boundaries around which tasks can be sliced.
 
-- If the project or the specification already defines an architecture, use it. 
-- Otherwise, outline the minimal set of coherent modules needed to deliver the feature:
-  - Prefer a signle responsibility per module. ASK: What reason has this module to change?
-  - Prefer fewer deep (i.e. do a lot of useful work) modules with small interfaces (have minimal surface areas).
-  - Add a module only when it isolates an external boundary or a responsibility that would otherwise be mixed into another.
-- Lightly document your design in file `<spec name>.design.md` located in the same folder as the specification:
+- **Identify architectural drivers.** Determine which requirements, quality attributes, constraints, and existing architectural decisions materially influence the design. If the project or the specification already defines an architecture, use it. Avoid designing around requirements that have no architectural significance.
+- **Explore critical design alternatives.** For consequential decisions, consider plausible alternatives and their trade-offs. Do not require alternatives for routine decisions already settled by project conventions.
+- **Identify architectural risks and uncertainties.** Examine integration boundaries, dependencies, data consistency, compatibility, and testability. Decide which assumptions require early validation, potentially through a tracer bullet.
+- **Establish implementation boundaries.** Identify cohesive modules, their responsibilities, interfaces, dependencies, and the smallest independently verifiable vertical slices that can evolve into the complete feature:
+  * Outline the minimal set of coherent modules needed to deliver the feature.
+  * Prefer a signle responsibility per module. ASK: What reason has this module to change?
+  * Prefer fewer deep (i.e. do a lot of useful work) modules with small interfaces (have minimal surface areas).
+  * Add a module only when it isolates an external boundary or a responsibility that would otherwise be mixed into another.
+- **Record your design decisions**. Use file `<spec name>.design.md` located in the same folder as the specification:
   - Modules their responsibility and interfaces
   - Dependencies and flow of execution
   - Key architectural decisions
-- If the design requires a product or architectural choice the specification does not settle, ask the user.
+
+**IMPORTANT:** If the design requires a product or architectural choice the specification does not settle, ask the user.
 
 ### 3. Decompose.
 
 Goal: Decompose the design into a prioritized list of tasks that a code agent can implement.
 
 - Break down the design into a prioritized list of tasks.
-- Focus each task on one coheasive slice of independently verifiable capability.
-- Every task must contribute directly to at least one story or acceptance criterion or be a necessary prerequisite for delivering one.
-- A task may cross architectural layers to implement and verify that behavior end-to-end.
-- Leave implementation choices to the implementor. Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
+- Focus each task on one coheasive, vertical slice of dependently verifiable observable value.
+- Every task must contribute directly to at least one story or acceptance criterion, or be a necessary prerequisite for delivering one.
+- A task may cross architectural layers.
+- Leave implementation details to the implementor. Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
 - Schedule tasks with the highest technical risk as early as their dependencies allow.
 
 ### 4. Verify.
