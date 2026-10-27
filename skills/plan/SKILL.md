@@ -66,7 +66,7 @@ Goal: Identify appropriate implementation boundaries around which tasks can be s
 Goal: Decompose the design into a prioritized list of tasks that a code agent can implement.
 
 - Break down the design into a prioritized list of tasks.
-- Focus each task on one coheasive, vertical slice of dependently verifiable observable value.
+- Focus each task on one coheasive, vertical slice of independently verifiable observable value.
 - Every task must contribute directly to at least one story or acceptance criterion, or be a necessary prerequisite for delivering one.
 - A task may cross architectural layers.
 - Leave implementation details to the implementor. Include implementation guidance ONLY when critical to preserve established architectural decisions, contracts, or compatibility requirements.
