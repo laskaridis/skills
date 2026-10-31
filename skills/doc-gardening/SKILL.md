@@ -43,11 +43,14 @@ Documentation, code and conventions differ per project. Do not assume structure.
 - Determine what to garden: the whole project, a path, or a diff. For a diff, include documents that describe the changed code, not only documents changed in the diff. Default to what the invocation implies.
 - Find the documentation and classify each document by its content, not its location: intent (specs, ADRs), derived (everything else), or ignored (superseded, deprecated).
 - Learn the project's documentation conventions and follow them when editing.
+- Include relevant inline, block and API documentation comments when discovering documentation; adapt to the project's languages and conventions.
 - When a human is available, confirm the classification if it is unclear.
 
 ### 2. Verify
 
 For each claim in scope, find the evidence in the code, tests or tooling and compare. Record each as accurate, discrepant or unverifiable.
+
+For code comments, check factual claims against the associated implementation, including comments made stale by changes. Preserve explanations of *why* unless contradicted by evidence; escalate uncertain intent. Flag potentially redundant comments for review rather than removing them automatically.
 
 ### 3. Resolve
 
