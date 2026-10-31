@@ -33,6 +33,9 @@ npx skills add laskaridis/skills@tdd
 
 # Install code
 npx skills add laskaridis/skills@code
+
+# Install doc-gardening
+npx skills add laskaridis/skills@doc-gardening
 ```
 
 ## Recommended workflow
@@ -44,6 +47,7 @@ I usually use these skills when delivering non-trivial features:
 3. Use `ddd` to capture domain language following the lingustic boundaries imposed by the business model.
 4. Use `plan` to break the spec into a task list plan.
 5. Use `tdd` and `code` to safely implement each behavior in an AFK coding-loop.
+6. Use `doc-gardening` to verify that the project's documentation still matches the code, either ad hoc or on a schedule.
 
 ## Notes and caveats
 
@@ -52,3 +56,4 @@ I usually use these skills when delivering non-trivial features:
 - `tdd` works best when the expected behavior is concrete enough to express as a failing test.
 - `ddd` makes certain high-level (and reasonable) assumptions about your project strucutre. Make sure to read the skill before using it to establish compliance to your specific case.
 - `code` assumes the presence of a task list.
+- `doc-gardening` fixes only what it can prove from code, tests or tooling. It never edits specs or ADRs without your permission and escalates anything it cannot verify.
