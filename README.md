@@ -1,15 +1,6 @@
 [![skills.sh](https://skills.sh/b/laskaridis/skills)](https://skills.sh/laskaridis/skills)
 
-Opinionated skills for developers who want coding agents to discover the domain, produce tighter specs, generate more executable task plans, and perform safer refactors.
-
-These skills are built for workflow with the following characteristics:
-
-1. Use a strong reasoning model to explore the domain and think through a feature.
-2. Lock that context into usable domain documents and a specification document.
-3. Turn the spec into tightly scoped tasks to be implemented by low reasoning coding agents.
-4. Disstill the business model and capture domain language and linguistic boundaries directly in the codebase.
-5. Implement tasks using TDD (including refactoring), optionally within an AFK coding loop.
-6. Review and clean-up the final implementation.
+Opinionated skills for developers who want to steer coding agents to discover the domain, produce tighter specs, generate more executable task plans, and write verifiable code.
 
 ## Installation
 
@@ -31,9 +22,6 @@ npx skills add laskaridis/skills@plan
 # Install tdd
 npx skills add laskaridis/skills@tdd
 
-# Install code
-npx skills add laskaridis/skills@code
-
 # Install doc-gardening
 npx skills add laskaridis/skills@doc-gardening
 ```
@@ -46,7 +34,7 @@ I usually use these skills when delivering non-trivial features:
 2. Use `specify` to preserve the agreed product and technical context as a feature spec.
 3. Use `ddd` to capture domain language following the lingustic boundaries imposed by the business model.
 4. Use `plan` to break the spec into a task list plan.
-5. Use `tdd` and `code` to safely implement each behavior in an AFK coding-loop.
+5. Use `tdd` to safely implement each behavior in an AFK coding-loop.
 6. Use `doc-gardening` to verify that the project's documentation still matches the code, either ad hoc or on a schedule.
 
 ## Notes and caveats
@@ -55,5 +43,4 @@ I usually use these skills when delivering non-trivial features:
 - `plan` is only as good as the spec you feed into it, so make sure you review `spec.md` before delegating implementation.
 - `tdd` works best when the expected behavior is concrete enough to express as a failing test.
 - `ddd` makes certain high-level (and reasonable) assumptions about your project strucutre. Make sure to read the skill before using it to establish compliance to your specific case.
-- `code` assumes the presence of a task list.
 - `doc-gardening` fixes only what it can prove from code, tests or tooling. It never edits specs or ADRs without your permission and escalates anything it cannot verify.
