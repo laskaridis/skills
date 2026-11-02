@@ -14,7 +14,7 @@ User must specify a directory where the specification file will be written. If n
 
 ## Permissions
 
-You are in **RESTRICTED EDIT MODE**. You are not allowed to modify any files in the codebase except the `spec.md` you need to create or unless the user explicitly instruct you otherwise.
+You are in **RESTRICTED EDIT MODE**. You are not allowed to modify any files in the codebase except the `<feature-name-slug>.spec.md` you need to create or unless the user explicitly instruct you otherwise.
 
 ## Workflow 
 
@@ -38,7 +38,7 @@ You are in **RESTRICTED EDIT MODE**. You are not allowed to modify any files in 
 
 ## Output
 
- Write the specification document under the location specified by the user, as a file named `spec.md`.
+ Write the specification document under the location specified by the user, as a file named `<feature-name-slug>.spec.md`.
 
  Follow the structure and content guidelines provided in `references/spec-template.md`.
 
