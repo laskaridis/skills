@@ -44,8 +44,9 @@ IMPORTANT: Expected outcomes of tests must be independent of the implementation.
 
 4. REFACTOR - Improve the design
 
-- Review your code and assess whether refactoring meanigfully improves the design.
-- If it does, refactor following closely the instructions in `references/refactoring-guidelines.md`.
+- Delegate a design review of the code changed in this cycle to a subagent. Request evidence-backed refactoring opportunities without file edits. Where subagents are not available, perform the review as a separate pass.
+- Assess the findings and decide whether refactoring meaningfully improves the design.
+- If it does, refactor following closely the instructions in  `references/refactoring-guidelines.md`.
 - Run all relevant tests affected by the change to verify that existing behavior is preserved. If tests fail, investigate and fix  them before proceeding.
 
 5. Repeat.
