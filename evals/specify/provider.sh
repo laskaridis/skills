@@ -9,11 +9,19 @@ SKILL_EVAL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIXTURE_DIR="$(cd "$SKILL_EVAL_DIR/../fixture" && pwd)"   # shared across skills
 REPO_ROOT="$(cd "$SKILL_EVAL_DIR/../.." && pwd)"
 PROMPT="$1"
+PROVIDER_OPTS="${2:-{\}}"
 ARM="${EVAL_ARM:-skill}"                 # skill | control
 SUBJECT_MODEL="${EVAL_SUBJECT_MODEL:-claude-sonnet-5-5}"
-TIMEOUT_S="${EVAL_TIMEOUT_S:-600}"
+# Derived from promptfooconfig.yaml's providers[0].config.timeout (ms) so the
+# internal kill switch can't fire before promptfoo's own provider timeout —
+# EVAL_TIMEOUT_S still wins if explicitly set.
+CONFIG_TIMEOUT_MS="$(echo "$PROVIDER_OPTS" | jq -r '.config.timeout // 600000')"
+TIMEOUT_S="${EVAL_TIMEOUT_S:-$((CONFIG_TIMEOUT_MS / 1000))}"
 
 RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/skill-eval-XXXXXX")"
+# Harness artifacts live outside RUN_DIR (not inside the git-tracked tree), so they
+# can never show up in `git status` and don't need to be named in an exclude list.
+META_DIR="$(mktemp -d "${TMPDIR:-/tmp}/skill-eval-meta-XXXXXX")"
 cp -R "$FIXTURE_DIR/." "$RUN_DIR/"
 mkdir -p "$RUN_DIR/out" && touch "$RUN_DIR/out/.gitkeep"
 if [ "$ARM" != "control" ]; then
@@ -24,22 +32,20 @@ fi
   && git -c user.name=eval -c user.email=eval@example.invalid commit -q -m baseline) \
   || { echo "harness error: could not prepare $RUN_DIR" >&2; exit 1; }
 
-TRANSCRIPT_FILE="$RUN_DIR/.agent-transcript.json"
+TRANSCRIPT_FILE="$META_DIR/agent-transcript.json"
 (cd "$RUN_DIR" && perl -e 'alarm shift; exec @ARGV' "$TIMEOUT_S" \
   claude -p "$PROMPT" --output-format json --model "$SUBJECT_MODEL" \
     --allowedTools Read Glob Grep Write Edit Skill \
     --permission-mode acceptEdits --setting-sources project \
     --strict-mcp-config --no-session-persistence \
-  >"$TRANSCRIPT_FILE" 2>"$RUN_DIR/.stderr")
+  >"$TRANSCRIPT_FILE" 2>"$META_DIR/stderr")
 EXIT=$?
 if [ "$EXIT" -ne 0 ]; then
-  echo "harness error: claude exited $EXIT (timeout=${TIMEOUT_S}s) run dir $RUN_DIR: $(tail -c 500 "$RUN_DIR/.stderr")" >&2
+  echo "harness error: claude exited $EXIT (timeout=${TIMEOUT_S}s) run dir $RUN_DIR: $(tail -c 500 "$META_DIR/stderr")" >&2
   exit 1
 fi
 
-# Skill/transcript files written by the harness itself are excluded from the diff.
-FILES_CHANGED="$(cd "$RUN_DIR" && git status --porcelain -uall \
-  | cut -c4- | grep -v -e '^\.agent-transcript\.json$' -e '^\.stderr$' | jq -R . | jq -s .)"
+FILES_CHANGED="$(cd "$RUN_DIR" && git status --porcelain -uall | cut -c4- | jq -R . | jq -s .)"
 SPEC_PATH="$(cd "$RUN_DIR" && ls out/*.spec.md 2>/dev/null | head -1 || true)"
 SPEC_CONTENT=""
 [ -n "$SPEC_PATH" ] && SPEC_CONTENT="$(cat "$RUN_DIR/$SPEC_PATH")"

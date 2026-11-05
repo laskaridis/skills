@@ -21,6 +21,12 @@ test("trap with no baseline needs >=80%", () => {
   assert.equal(evaluate({ a: { T1: { pass: 4, total: 5 } } }, {}).length, 0);
 });
 test("trap fails only when more than one repeat below baseline", () => {
-  assert.equal(evaluate({ a: { T1: { pass: 4, total: 5 } } }, { a: { T1: 5 } }).length, 0);
-  assert.equal(evaluate({ a: { T1: { pass: 3, total: 5 } } }, { a: { T1: 5 } }).length, 1);
+  assert.equal(evaluate({ a: { T1: { pass: 4, total: 5 } } }, { a: { T1: { pass: 5, total: 5 } } }).length, 0);
+  assert.equal(evaluate({ a: { T1: { pass: 3, total: 5 } } }, { a: { T1: { pass: 5, total: 5 } } }).length, 1);
+});
+test("trap floor scales with current repeat count, not raw baseline pass count", () => {
+  // Baseline ran 5 repeats and passed all 5; a gated run with only 3 valid
+  // repeats (others excluded as harness errors) that passes all 3 must not
+  // be flagged just because 3 < the raw baseline count of 5.
+  assert.equal(evaluate({ a: { T1: { pass: 3, total: 3 } } }, { a: { T1: { pass: 5, total: 5 } } }).length, 0);
 });

@@ -33,5 +33,11 @@ test("duplicate / decreasing AC codes fail", () => {
   assert.ok(!checkAcCodes(env({ specContent: good.replace("AC-002", "AC-001") })).pass);
   assert.ok(!checkAcCodes(env({ specContent: good.replace("AC-001", "AC-003") })).pass);
 });
-test("non-gherkin AC fails", () => assert.ok(!checkGherkin(env({ specContent: good.replace("Given a, When b, Then c.", "It works") })).pass));
+test("malformed Given/When/Then fails", () => assert.ok(!checkGherkin(env({ specContent: good.replace("Given a, When b, Then c.", "Given a, Then c.") })).pass));
+test("checklist AC (no Given/When/Then) passes", () => assert.ok(checkGherkin(env({ specContent: good.replace("Given a, When b, Then c.", "It works") })).pass));
+test("table-format AC passes AC-codes and Gherkin checks", () => {
+  const table = good.replace("- **AC-001:** Given a, When b, Then c.", "| AC-001 | It works |");
+  assert.ok(checkAcCodes(env({ specContent: table })).pass);
+  assert.ok(checkGherkin(env({ specContent: table })).pass);
+});
 test("edits outside out/ fail", () => assert.ok(!checkRestrictedEdit(env({ filesChanged: ["out/x.spec.md", "src/a.ts"] })).pass));

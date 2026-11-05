@@ -3,9 +3,13 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
+import type { Envelope } from "./assert.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const SPEC_OF_ENVELOPE = "JSON.parse(output).specContent";
+// Keyed off Envelope so a rename of specContent in assert.ts fails this file's
+// type check instead of silently feeding `undefined` to the judge's transform.
+const SPEC_FIELD: keyof Envelope = "specContent";
+const SPEC_OF_ENVELOPE = `JSON.parse(output).${SPEC_FIELD}`;
 const EVIDENCE = " Answer PASS or FAIL and justify with a short verbatim quote from the specification.";
 
 const framing = (transcript: string, arm: string) =>

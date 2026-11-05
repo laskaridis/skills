@@ -12,7 +12,7 @@ export const TRAP_MAX_DROP = 1;        // repeats below the recorded baseline
 
 export type Tally = { pass: number; total: number };
 export type Tallies = Record<string, Record<string, Tally>>;   // case -> metric -> tally
-export type Baseline = Record<string, Record<string, number>>; // case -> trap -> passes
+export type Baseline = Record<string, Record<string, Tally>>;  // case -> trap -> {pass, total} at --update time
 
 interface ResultRow {
   failureReason?: number; error?: string | null; testCase?: { description?: string };
@@ -42,8 +42,13 @@ export function evaluate(tallies: Tallies, baseline: Baseline): string[] {
         if (t.pass !== t.total) failures.push(`${c}/${m}: ${t.pass}/${t.total} (deterministic must be 100%)`);
       } else {
         const base = baseline[c]?.[m];
-        const floor = base === undefined ? Math.ceil(TRAP_MIN_RATE * t.total) : base - TRAP_MAX_DROP;
-        if (t.pass < floor) failures.push(`${c}/${m}: ${t.pass}/${t.total} below floor ${floor}${base === undefined ? " (no baseline, need >=80%)" : ` (baseline ${base})`}`);
+        // Baseline pass count is scaled to the current repeat count before applying
+        // the drop tolerance, so a differing --repeat between baseline and gated
+        // runs doesn't change the effective bar.
+        const floor = base === undefined
+          ? Math.ceil(TRAP_MIN_RATE * t.total)
+          : Math.ceil((base.pass / base.total) * t.total) - TRAP_MAX_DROP;
+        if (t.pass < floor) failures.push(`${c}/${m}: ${t.pass}/${t.total} below floor ${floor}${base === undefined ? " (no baseline, need >=80%)" : ` (baseline ${base.pass}/${base.total})`}`);
       }
     }
   }
@@ -76,7 +81,7 @@ function main() {
   if (update) {
     const next: Baseline = {};
     for (const [c, metrics] of Object.entries(tallies))
-      for (const [m, t] of Object.entries(metrics)) if (!DETERMINISTIC.includes(m)) (next[c] ??= {})[m] = t.pass;
+      for (const [m, t] of Object.entries(metrics)) if (!DETERMINISTIC.includes(m)) (next[c] ??= {})[m] = { pass: t.pass, total: t.total };
     writeFileSync(baselinePath, JSON.stringify(next, null, 2) + "\n");
     console.log(`baseline written to ${baselinePath}`);
     return;

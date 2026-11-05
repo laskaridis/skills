@@ -30,8 +30,14 @@ export function checkSections(output: unknown): GradingResult {
   return res(missing.length === 0, missing.length ? `missing sections: ${missing.join(", ")}` : "all sections present");
 }
 
+// An AC code is either prose ("**AC-001:**") or a table cell ("| AC-001 |"), per
+// spec-template.md's "Use a concise checklist or table when a scenario format
+// would obscure the acceptance condition." Shared by acCodes and checkGherkin so
+// the two can't drift on what counts as an AC line.
+const AC_CODE_SRC = "\\bAC-(\\d+)\\b(?=\\**:|\\s*\\|)";
+
 export const acCodes = (spec: string): number[] =>
-  [...spec.matchAll(/\bAC-(\d+)\b(?=\**:)/g)].map((m) => Number(m[1]));
+  [...spec.matchAll(new RegExp(AC_CODE_SRC, "g"))].map((m) => Number(m[1]));
 
 export function checkAcCodes(output: unknown): GradingResult {
   const codes = acCodes(parseEnvelope(output).specContent);
@@ -41,12 +47,15 @@ export function checkAcCodes(output: unknown): GradingResult {
   return res(unique && increasing, `AC codes: ${codes.join(", ")} (unique=${unique}, increasing=${increasing})`);
 }
 
+// The template permits a checklist or table instead of Gherkin, so a line is only
+// flagged when it attempts Gherkin (contains "Given") but doesn't complete the
+// Given/When/Then form — not merely for using a non-Gherkin format.
 export function checkGherkin(output: unknown): GradingResult {
   const spec = parseEnvelope(output).specContent;
-  const lines = spec.split("\n").filter((l) => /\bAC-\d+\b(?=\**:)/.test(l));
+  const lines = spec.split("\n").filter((l) => new RegExp(AC_CODE_SRC).test(l));
   if (lines.length === 0) return res(false, "no acceptance criteria found");
-  const bad = lines.filter((l) => !/Given\b.*\bWhen\b.*\bThen\b/i.test(l));
-  return res(bad.length === 0, bad.length ? `not Given/When/Then: ${bad.map((l) => l.trim().slice(0, 80)).join(" | ")}` : `${lines.length} ACs in Given/When/Then form`);
+  const bad = lines.filter((l) => /\bGiven\b/i.test(l) && !/Given\b.*\bWhen\b.*\bThen\b/i.test(l));
+  return res(bad.length === 0, bad.length ? `malformed Given/When/Then: ${bad.map((l) => l.trim().slice(0, 80)).join(" | ")}` : `${lines.length} ACs checked`);
 }
 
 export function checkRestrictedEdit(output: unknown): GradingResult {
