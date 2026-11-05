@@ -10,17 +10,13 @@ Review a GitHub pull request against the project's actual code and tests, then p
 
 ## Core rules
 
-1. **Read-only.** The reviewing agent must never edit, create, delete, or stage files, and must never push commits or alter the PR's branch. It only reads the repository, the diff, and GitHub metadata, and it only writes by posting a GitHub review.
-2. **Always sign off.** Every run ends with exactly one PR review submitted via the GitHub API (`event=COMMENT`), even when there are zero findings. A clean PR gets a short, genuine sign-off, not a fabricated issue.
-3. **Comments live on GitHub, on the right line.** Every finding that concerns a specific line of a specific file in the diff is posted as an inline review comment on that file and line. Findings that don't map to one line (e.g. "this PR is missing a migration", overall architecture concerns) go in the review's top-level body instead of being forced onto an arbitrary line.
+1. **Read-only.** The reviewing agent is not allowed to modify the repository or push commits. It only reads the repository, the diff, and GitHub metadata, and provides its feedback by posting comments in GitHub.
+2. **Always sign off.** Every review is signed-off by the reviewer with a comment on the review even when there are zero findings.
+3. **Inline findings on GitHub on the right line.** Every finding concerning a specific line of a specific file in the diff is posted as an inline review comment on that file and line.
 4. **Evidence over suspicion.** Ground every finding in the diff and the surrounding code you actually read — not assumptions about what the code "probably" does. If you're unsure whether something is a real problem, say so in the comment rather than asserting it.
 5. **Don't invent scope.** Review the PR's own changes. Pre-existing issues in code the PR doesn't touch are out of scope unless the PR's changes depend on or worsen them — mention those only in the summary, not as inline comments on unchanged lines.
 
 ## Workflow
-
-### 0. Check for `gh`
-
-This skill is built around the GitHub CLI. Before doing anything else, confirm it's available and authenticated: `gh auth status`. If `gh` is missing or not authenticated, stop and tell the user what's missing (install `gh` / run `gh auth login`) instead of falling back to raw GitHub API calls with a manually supplied token.
 
 ### 1. Resolve the target PR
 
