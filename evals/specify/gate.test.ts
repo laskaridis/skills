@@ -1,0 +1,60 @@
+import test from "node:test";
+import assert from "node:assert";
+import { tally, evaluate, checkCompleteness } from "./gate.ts";
+
+const row = (c: string, metrics: Record<string, boolean>, extra = {}) => ({
+  testCase: { description: c }, failureReason: 0,
+  namedScores: Object.fromEntries(Object.entries(metrics).map(([m, pass]) => [m, pass ? 1 : 0])), ...extra,
+});
+
+test("harness errors are excluded from denominators", () => {
+  const { tallies, harnessErrors } = tally([row("a", { T1: true }), { testCase: { description: "a" }, failureReason: 2, error: "timeout" }]);
+  assert.equal(harnessErrors, 1);
+  assert.deepEqual(tallies.a.T1, { pass: 1, total: 1 });
+});
+test("deterministic must be 100%", () => {
+  assert.equal(evaluate({ a: { gherkin: { pass: 4, total: 5 } } }, {}).length, 1);
+  assert.equal(evaluate({ a: { gherkin: { pass: 5, total: 5 } } }, {}).length, 0);
+});
+test("trap with no baseline needs >=80%", () => {
+  assert.equal(evaluate({ a: { T1: { pass: 3, total: 5 } } }, {}).length, 1);
+  assert.equal(evaluate({ a: { T1: { pass: 4, total: 5 } } }, {}).length, 0);
+});
+test("trap fails only when more than one repeat below baseline", () => {
+  assert.equal(evaluate({ a: { T1: { pass: 4, total: 5 } } }, { a: { T1: { pass: 5, total: 5 } } }).length, 0);
+  assert.equal(evaluate({ a: { T1: { pass: 3, total: 5 } } }, { a: { T1: { pass: 5, total: 5 } } }).length, 1);
+});
+test("trap floor scales with current repeat count, not raw baseline pass count", () => {
+  // Baseline ran 5 repeats and passed all 5; a gated run with only 3 valid
+  // repeats (others excluded as harness errors) that passes all 3 must not
+  // be flagged just because 3 < the raw baseline count of 5.
+  assert.equal(evaluate({ a: { T1: { pass: 3, total: 3 } } }, { a: { T1: { pass: 5, total: 5 } } }).length, 0);
+});
+test("a weak baseline can't lower the bar below the absolute 80% floor", () => {
+  // Baseline was only 4/5 (80%); a baseline-relative floor of 4-1=3 would let
+  // 3/5 (60%) pass, below the documented >=80% trap bar. The absolute floor
+  // must still apply.
+  assert.equal(evaluate({ a: { T1: { pass: 3, total: 5 } } }, { a: { T1: { pass: 4, total: 5 } } }).length, 1);
+  assert.equal(evaluate({ a: { T1: { pass: 4, total: 5 } } }, { a: { T1: { pass: 4, total: 5 } } }).length, 0);
+});
+test("checkCompleteness flags a case/metric missing entirely", () => {
+  const expected = { a: ["file-named", "T1"] };
+  const problems = checkCompleteness({ a: { "file-named": { pass: 5, total: 5 } } }, expected, 3);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /a\/T1: missing/);
+});
+test("checkCompleteness flags too few valid repeats", () => {
+  const expected = { a: ["T1"] };
+  const problems = checkCompleteness({ a: { T1: { pass: 2, total: 2 } } }, expected, 3);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /only 2 valid repeat/);
+});
+test("checkCompleteness passes when every expected case/metric has enough valid repeats", () => {
+  const expected = { a: ["file-named", "T1"] };
+  const tallies = { a: { "file-named": { pass: 5, total: 5 }, T1: { pass: 4, total: 5 } } };
+  assert.equal(checkCompleteness(tallies, expected, 3).length, 0);
+});
+test("checkCompleteness flags an all-errors run (empty tallies) against any expected case", () => {
+  const problems = checkCompleteness({}, { a: ["file-named", "T1"] }, 3);
+  assert.equal(problems.length, 2);
+});

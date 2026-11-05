@@ -1,0 +1,21 @@
+# Run:  npm run eval            (skill arm, 3 cases x 5 repeats)
+#       npm run eval:control    (one-off no-skill calibration arm)
+description: specify skill — execution quality
+prompts: ["{{task}}"]
+providers:
+  - id: exec:./provider.sh
+    label: claude-code-sonnet-5-5
+    config: { timeout: 900000 }
+# Judge: deliberately a different model from the subject (DESIGN.md §2). Needs ANTHROPIC_API_KEY.
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-opus-5-5
+  assert:
+    - { type: javascript, value: file://assert.ts:checkFileNamed,      metric: file-named }
+    - { type: javascript, value: file://assert.ts:checkSections,       metric: sections }
+    - { type: javascript, value: file://assert.ts:checkAcCodes,        metric: ac-codes }
+    - { type: javascript, value: file://assert.ts:checkGherkin,        metric: gherkin }
+    - { type: javascript, value: file://assert.ts:checkRestrictedEdit, metric: restricted-edit }
+tests: file://generateTests.ts:generateTests
+evaluateOptions:
+  maxConcurrency: 5

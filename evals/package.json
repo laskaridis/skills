@@ -1,0 +1,20 @@
+{
+  "name": "skill-evals",
+  "private": true,
+  "packageManager": "pnpm@9.15.1",
+  "type": "module",
+  "description": "Execution-quality evals for the skills in this repository. See DESIGN.md.",
+  "scripts": {
+    "specify:eval": "cd specify && promptfoo eval -c promptfooconfig.yaml --repeat 5 -o results/$(date +%Y%m%dT%H%M%S).json",
+    "specify:eval:control": "cd specify && EVAL_ARM=control promptfoo eval -c promptfooconfig.yaml --repeat 5 -o results/control-$(date +%Y%m%dT%H%M%S).json",
+    "specify:gate": "cd specify && tsx gate.ts",
+    "specify:gate:update": "cd specify && tsx gate.ts --update",
+    "test": "tsx --test specify/assert.test.ts specify/gate.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "promptfoo": "0.120.19",
+    "tsx": "^4.19.0",
+    "yaml": "^2.6.0"
+  }
+}
