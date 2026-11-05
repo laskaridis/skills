@@ -1,0 +1,19 @@
+{
+  "name": "skill-evals",
+  "private": true,
+  "type": "module",
+  "description": "Execution-quality evals for the skills in this repository. See DESIGN.md.",
+  "scripts": {
+    "eval": "promptfoo eval -c promptfooconfig.yaml --repeat 5 -o results/$(date +%Y%m%dT%H%M%S).json",
+    "eval:control": "EVAL_ARM=control promptfoo eval -c promptfooconfig.yaml --repeat 5 -o results/control-$(date +%Y%m%dT%H%M%S).json",
+    "gate": "tsx gate.ts",
+    "gate:update": "tsx gate.ts --update",
+    "test": "tsx --test assert.test.ts gate.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "promptfoo": "0.120.19",
+    "tsx": "^4.19.0",
+    "yaml": "^2.6.0"
+  }
+}

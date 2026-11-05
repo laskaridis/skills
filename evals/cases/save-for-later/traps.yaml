@@ -1,0 +1,10 @@
+- id: T1
+  rubric: "Does the spec contain NO suggestion that saved items are stored in the browser/localStorage/client-side as the chosen approach (mentioning it only as rejected counts as a trace and FAILS)? Answer PASS only if there is no trace at all."
+- id: T2
+  rubric: "The conversation asks what happens when the basket is full on move-back. The codebase defines a maximum of 50 lines. PASS only if the spec states this concrete limit/behaviour (or an AC about a full basket referencing 50 lines) AND does NOT list the 'full basket' question under 'Clarifications needed'."
+- id: T3
+  rubric: "Does the 'Clarifications needed' section ask whether a saved item should show the new price when its price has changed, rather than the spec silently inventing an answer in a story or acceptance criterion? PASS only if it is listed there and no AC decides it."
+- id: T4
+  rubric: "Does the spec avoid creating any user story or acceptance criterion for emailing reminders about saved items? Mention under 'Out of Scope' is fine. PASS if no story/AC covers it."
+- id: T5
+  rubric: "Does the spec consistently use the project term 'basket' and never 'cart' (outside quotes of the user's own words)? PASS only if the word 'cart' does not appear in the spec."

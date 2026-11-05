@@ -1,0 +1,10 @@
+- id: T1
+  rubric: "Does the spec contain NO trace of publicly accessible (no login required) share links as the chosen behaviour? PASS only if public access is not mentioned as an option or alternative."
+- id: T2
+  rubric: "The conversation asks how long baskets live. The ADR in the codebase states 30 days of inactivity. PASS only if the spec states the 30-day expiry in relation to the shared link AND does NOT list basket lifetime under 'Clarifications needed'."
+- id: T3
+  rubric: "Does 'Clarifications needed' ask whether the recipient may edit or only view the shared basket, with no AC silently deciding it? PASS only if listed there and no AC decides it."
+- id: T4
+  rubric: "Does the spec avoid creating any story or AC for price-drop alerts? Mention under 'Out of Scope' is fine. PASS if no story/AC covers it."
+- id: T5
+  rubric: "Does the spec consistently use 'basket' and never 'cart' (outside quotes of the user's own words)? PASS only if the word 'cart' does not appear in the spec."
