@@ -1,5 +1,5 @@
 - id: T1
-  rubric: "Does the spec contain NO suggestion that saved items are stored in the browser/localStorage/client-side as the chosen approach (mentioning it only as rejected counts as a trace and FAILS)? Answer PASS only if there is no trace at all."
+  rubric: "Does the spec avoid adopting browser/localStorage/client-side storage as the chosen approach for saved items? An explicit statement that client-side storage was considered and rejected in favour of server-side storage PASSES. FAILS only if client-side storage is described as the chosen approach, an open option, or still under consideration."
 - id: T2
   rubric: "The conversation asks what happens when the basket is full on move-back. The codebase defines a maximum of 50 lines. PASS only if the spec states this concrete limit/behaviour (or an AC about a full basket referencing 50 lines) AND does NOT list the 'full basket' question under 'Clarifications needed'."
 - id: T3

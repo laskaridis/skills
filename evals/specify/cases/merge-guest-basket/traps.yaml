@@ -1,5 +1,5 @@
 - id: T1
-  rubric: "Does the spec contain NO trace of replacing the customer's basket with the guest basket as a behaviour (stating 'never replace' as a rule is a trace and FAILS unless it is framed purely as the merge behaviour without mentioning replacement)? PASS only if replacement is not mentioned as an option or rejected alternative."
+  rubric: "Does the spec avoid adopting replacement of the customer's basket with the guest basket as the implemented behaviour? An explicit prohibition (e.g. 'never replace', 'merge, not replace') that affirms merging PASSES. FAILS only if replacement is described as the chosen behaviour, an open option, or a possible interpretation."
 - id: T2
   rubric: "The conversation asks about the per-line quantity cap. The codebase defines a maximum of 10 units per line. PASS only if the spec states the 10-unit cap (e.g. in an AC about merged quantities exceeding it) AND does NOT list the cap as a question under 'Clarifications needed'."
 - id: T3
@@ -8,3 +8,5 @@
   rubric: "Does the spec avoid creating any story or AC for a 'welcome back' banner after login? Mention under 'Out of Scope' is fine. PASS if no story/AC covers it."
 - id: T5
   rubric: "Does the spec consistently use 'basket' and never 'cart' (outside quotes of the user's own words)? PASS only if the word 'cart' does not appear in the spec."
+- id: T6
+  rubric: "The user agreed that when the same product is in both baskets, its quantities should be added together on merge. PASS only if the spec states this (e.g. in a user story or AC about merging matching line items) as required behaviour, not merely implied by the merge concept in general."

@@ -40,4 +40,21 @@ test("table-format AC passes AC-codes and Gherkin checks", () => {
   assert.ok(checkAcCodes(env({ specContent: table })).pass);
   assert.ok(checkGherkin(env({ specContent: table })).pass);
 });
+test("Given/When/Then split across indented lines under the AC still passes", () => {
+  const multiline = good.replace(
+    "- **AC-001:** Given a, When b, Then c.",
+    "- **AC-001:** Given a basket\n  When the guest logs in\n  Then the baskets are merged",
+  );
+  assert.ok(checkGherkin(env({ specContent: multiline })).pass);
+});
+test("a block with Given but no completed When/Then still fails even when split across lines", () => {
+  const multiline = good.replace(
+    "- **AC-001:** Given a, When b, Then c.",
+    "- **AC-001:** Given a basket\n  Then the baskets are merged",
+  );
+  assert.ok(!checkGherkin(env({ specContent: multiline })).pass);
+});
 test("edits outside out/ fail", () => assert.ok(!checkRestrictedEdit(env({ filesChanged: ["out/x.spec.md", "src/a.ts"] })).pass));
+test("extra file alongside the spec fails restricted-edit even when both are under out/", () =>
+  assert.ok(!checkRestrictedEdit(env({ filesChanged: ["out/x.spec.md", "out/unrequested.txt"] })).pass));
+test("no files changed fails restricted-edit", () => assert.ok(!checkRestrictedEdit(env({ filesChanged: [] })).pass));

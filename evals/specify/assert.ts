@@ -47,19 +47,33 @@ export function checkAcCodes(output: unknown): GradingResult {
   return res(unique && increasing, `AC codes: ${codes.join(", ")} (unique=${unique}, increasing=${increasing})`);
 }
 
-// The template permits a checklist or table instead of Gherkin, so a line is only
+// The template permits a checklist or table instead of Gherkin, so a block is only
 // flagged when it attempts Gherkin (contains "Given") but doesn't complete the
-// Given/When/Then form — not merely for using a non-Gherkin format.
+// Given/When/Then form — not merely for using a non-Gherkin format. A block spans
+// from its AC-code line up to (but not including) the next AC-code line or the
+// next section heading, so clauses written on their own indented lines (rather
+// than all crammed onto the AC-code line) are still recognized.
 export function checkGherkin(output: unknown): GradingResult {
   const spec = parseEnvelope(output).specContent;
-  const lines = spec.split("\n").filter((l) => new RegExp(AC_CODE_SRC).test(l));
-  if (lines.length === 0) return res(false, "no acceptance criteria found");
-  const bad = lines.filter((l) => /\bGiven\b/i.test(l) && !/Given\b.*\bWhen\b.*\bThen\b/i.test(l));
-  return res(bad.length === 0, bad.length ? `malformed Given/When/Then: ${bad.map((l) => l.trim().slice(0, 80)).join(" | ")}` : `${lines.length} ACs checked`);
+  const lines = spec.split("\n");
+  const acLineIdx = lines.reduce<number[]>((acc, l, i) => (new RegExp(AC_CODE_SRC).test(l) ? [...acc, i] : acc), []);
+  if (acLineIdx.length === 0) return res(false, "no acceptance criteria found");
+  const blocks = acLineIdx.map((start, i) => {
+    const nextAc = i + 1 < acLineIdx.length ? acLineIdx[i + 1] : lines.length;
+    let end = nextAc;
+    for (let j = start + 1; j < nextAc; j++) if (/^#{1,6}\s+/.test(lines[j])) { end = j; break; }
+    return lines.slice(start, end).join("\n");
+  });
+  const bad = blocks.filter((b) => /\bGiven\b/i.test(b) && !/Given\b[\s\S]*\bWhen\b[\s\S]*\bThen\b/i.test(b));
+  return res(bad.length === 0, bad.length ? `malformed Given/When/Then: ${bad.map((b) => b.trim().replace(/\n/g, " / ").slice(0, 80)).join(" | ")}` : `${blocks.length} ACs checked`);
 }
 
 export function checkRestrictedEdit(output: unknown): GradingResult {
   const e = parseEnvelope(output);
   const outside = e.filesChanged.filter((f) => !f.startsWith("out/"));
-  return res(outside.length === 0, outside.length ? `changed outside out/: ${outside.join(", ")}` : "only out/ changed");
+  if (outside.length) return res(false, `changed outside out/: ${outside.join(", ")}`);
+  // specify permits only the single spec file to be created/changed; extra files
+  // under out/ (or a missing/mismatched spec) are also a restricted-edit failure.
+  const onlySpec = e.filesChanged.length === 1 && e.filesChanged[0] === e.specPath;
+  return res(onlySpec, onlySpec ? "only the spec file changed" : `expected exactly one changed file (${e.specPath}), got: ${e.filesChanged.join(", ") || "(none)"}`);
 }
