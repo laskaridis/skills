@@ -1,20 +1,23 @@
 # Skill evals
 
-Implements [DESIGN.md](DESIGN.md) for the `specify` skill.
+Implements [DESIGN.md](DESIGN.md). Layout: shared `package.json` and `fixture/` here,
+everything skill-specific under `evals/<skill>/` (currently only [`specify/`](specify/)).
 
 ## Run
 
 ```bash
-cd evals && npm install
+cd evals && pnpm install
 export ANTHROPIC_API_KEY=...        # needed only for the Layer-2 judge (Opus 5.5)
-npm test                            # unit tests for assert.ts and gate.ts (no API cost)
-npm run eval:control                # ONE-OFF: no-skill calibration arm (DESIGN §5)
-npm run eval                        # 3 cases x 5 repeats -> results/<timestamp>.json
-npm run gate                        # pass bar vs baseline.json (exit 1 on regression)
-npm run gate:update                 # record current trap pass counts as baseline.json
+pnpm test                           # unit tests for every skill's assertions/gate (no API cost)
+pnpm specify:eval:control           # ONE-OFF: no-skill calibration arm (DESIGN §5)
+pnpm specify:eval                   # 3 cases x 5 repeats -> specify/results/<timestamp>.json
+pnpm specify:gate                   # pass bar vs specify/baseline.json (exit 1 on regression)
+pnpm specify:gate:update            # record current trap pass counts as the baseline
 ```
 
-Requires the `claude` CLI on PATH and `jq`. `baseline.json` is empty until the first
+Add a skill by creating `evals/<skill>/` and `<skill>:*` scripts in `package.json`.
+
+Requires the `claude` CLI on PATH and `jq`. `specify/baseline.json` is empty until the first
 accepted run; until then traps must reach >= 4/5 per case.
 
 ## Deviations from DESIGN.md

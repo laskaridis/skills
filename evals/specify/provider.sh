@@ -5,15 +5,16 @@
 # A timeout / non-zero exit is a HARNESS ERROR: nothing on stdout, message on stderr,
 # exit 1 (promptfoo counts it as an error, not a graded failure, and we never retry).
 set -uo pipefail
-EVALS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$EVALS_DIR/.." && pwd)"
+SKILL_EVAL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FIXTURE_DIR="$(cd "$SKILL_EVAL_DIR/../fixture" && pwd)"   # shared across skills
+REPO_ROOT="$(cd "$SKILL_EVAL_DIR/../.." && pwd)"
 PROMPT="$1"
 ARM="${EVAL_ARM:-skill}"                 # skill | control
 SUBJECT_MODEL="${EVAL_SUBJECT_MODEL:-claude-sonnet-5-5}"
 TIMEOUT_S="${EVAL_TIMEOUT_S:-600}"
 
 RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/skill-eval-XXXXXX")"
-cp -R "$EVALS_DIR/fixture/." "$RUN_DIR/"
+cp -R "$FIXTURE_DIR/." "$RUN_DIR/"
 mkdir -p "$RUN_DIR/out" && touch "$RUN_DIR/out/.gitkeep"
 if [ "$ARM" != "control" ]; then
   mkdir -p "$RUN_DIR/.claude/skills"

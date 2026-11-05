@@ -191,18 +191,26 @@ its purpose. Speed is a feature.
 
 ## 7. Layout
 
+Shared infrastructure lives at the top level; everything specific to one skill
+lives under `evals/<skill>/` so evaluations of different skills stay isolated.
+
 ```
 evals/
   DESIGN.md           this document
-  promptfooconfig.yaml
-  provider.sh         exec provider -> claude -p, emits the JSON envelope
-  assert.ts           deterministic assertions
-  baseline.json       accepted pass rates (committed)
-  fixture/            the shared fixture repository
-  cases/
-    <case>/transcript.md
-    <case>/traps.yaml
-  results/            timestamped run output
+  README.md           how to run, known deviations
+  package.json        pnpm project shared by all skill evals
+  fixture/            the shared fixture repository (reused across skills)
+  <skill>/            e.g. specify/
+    promptfooconfig.yaml
+    provider.sh       exec provider -> claude -p, emits the JSON envelope
+    assert.ts         deterministic assertions
+    generateTests.ts  builds test cases from cases/
+    gate.ts           pass-bar gate against baseline.json
+    baseline.json     accepted pass rates (committed)
+    cases/
+      <case>/transcript.md
+      <case>/traps.yaml
+    results/          timestamped run output (git-ignored)
 ```
 
 Everything is versioned next to the skills it tests, so the eval actually gets
