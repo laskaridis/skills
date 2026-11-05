@@ -3,6 +3,13 @@
 Implements [DESIGN.md](DESIGN.md). Layout: shared `package.json` and `fixture/` here,
 everything skill-specific under `evals/<skill>/` (currently only [`specify/`](specify/)).
 
+## Prerequisites
+
+- `claude` CLI on PATH
+- `jq` on PATH
+- `pnpm`
+- `ANTHROPIC_API_KEY` env var (only needed for the Layer-2 judge, Opus 5.5)
+
 ## Run
 
 ```bash
