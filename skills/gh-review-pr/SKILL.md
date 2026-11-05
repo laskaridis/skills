@@ -6,7 +6,7 @@ argument-hint: Which PR should be reviewed (number, URL, or branch)? Defaults to
 
 # gh-review-pr
 
-Review a GitHub pull request against the project's actual code and tests, then publish the review on GitHub itself: inline comments on the exact lines they concern, and a single sign-off review comment that always gets posted, whether or not issues were found.
+Review a GitHub pull request against the project's actual code and tests, then publish the review on GitHub itself. Inline comments on the exact lines they concern, and a single sign-off review comment that always gets posted, whether or not issues were found.
 
 ## Core rules
 
@@ -17,6 +17,10 @@ Review a GitHub pull request against the project's actual code and tests, then p
 5. **Don't invent scope.** Review the PR's own changes. Pre-existing issues in code the PR doesn't touch are out of scope unless the PR's changes depend on or worsen them — mention those only in the summary, not as inline comments on unchanged lines.
 
 ## Workflow
+
+### 0. Check for `gh`
+
+This skill is built around the GitHub CLI. Before doing anything else, confirm it's available and authenticated: `gh auth status`. If `gh` is missing or not authenticated, stop and tell the user what's missing (install `gh` / run `gh auth login`) instead of falling back to raw GitHub API calls with a manually supplied token.
 
 ### 1. Resolve the target PR
 
