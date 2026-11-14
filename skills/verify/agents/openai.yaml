@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify"
+  short_description: "Verify task results against requirements and constraints"
+  default_prompt: "Use $verify to verify this task against the user prompt, specification, task plan, and explicit change boundary."
