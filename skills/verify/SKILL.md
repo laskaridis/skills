@@ -1,71 +1,81 @@
 ---
 name: verify
-description: Independently verify a coding agent's completed task against its specification, scope, constraints, and affected behavior. Return evidence-backed findings to the orchestrator without implementing fixes.
+description: Independently verify a coding agent's output against user intent, architectural constraints and existing project rules. Report evidence-backed findings without implementing fixes.
 ---
 
 # Verify
 
-## Inputs
+## User input
 
-Require the user prompt, specification, task plan, assigned task ID,
-and an explicit change boundary: baseline revision and result revision
-or working-tree state. Read referenced design and context documents.
+User is expected to specify the **VERIFICATION SCOPE**:
 
-Report missing inputs or material contradictions as blockers. Do not
-silently resolve product or architectural ambiguity.
+- An explicit **CHANGE BOUNDARY** that scopes the output of the coding agent that needs to be
+  verified. For example: a baseline revision and result revision or working-tree state.
+- The input provided to the coding agent to produce the given output: an assigned task,
+  specification, user prompt or other relevant context.
+- Optionally, specific instructions the verifier agent **must** take into consideration before
+  the verification.
 
-## Boundaries
+Report missing inputs that prevent verification as blockers.
 
-- Verify the assigned task and affected existing behavior. Do not flag
-  requirements assigned to future tasks as missing.
-- Inspect supporting code as needed, but attribute findings to the task's
-  changes. Exclude unrelated, pre-existing problems.
-- Leave implementation, persistent tests, documents, and task status unchanged.
-  You may run checks and create disposable probes; remove only your own
-  temporary artifacts.
-- Return findings to the orchestrator. Do not implement fixes or select
-  the next task.
+## Core rules
 
-## Verification
+- Derive expected behaviour **independently** from user supplied **VERIFICATION SCOPE**
+  (input provided to the coding agent to generate the output), applicable project
+  rules and architectural constraints. Treat the coding agent's output as claims to verify.
+- Verify the outcome against your derived expectations. Do not invent product requirements
+  or flag potential future functionality as missing.
+- Constrain your findings to the assigned task's changes, the **CHANGE BOUNDARY**
+  specified by the user. Exclude unrelated or pre-existing problems.
+- Leave implementation, tests, documents, and task status unchanged. You may run
+  checks and create temporary, disposable probes which you must clean up afterwards.
+- Return your findings to the caller. Do not implement fixes or make any permanent
+  changes in the codebase.
+- Inspect the codebase as needed using exploration subagents with fresh contexts.
+- Run all relevant checks independently. Use targeted probes where existing evidence
+  is insufficient using subagents.
 
-Derive expectations from the prompt, specification, task criteria, design,
-and applicable project rules. Treat the coding agent's output as claims to
-verify. Inspect the changes and relevant callers, dependencies, and tests
-across these dimensions:
+## Verification scope
 
-1. **Correctness:** Check acceptance criteria, expected behavior, relevant
-   edge cases, error handling, and domain invariants.
-2. **Completeness:** Map every task-applicable prompt/specification
-   requirement, completion criterion, and constraint to verification
-   evidence. Do not pass with any unaccounted for. Check for missing
-   requirements, unsupported assumptions, and scope deviations. Trace each
-   introduced behavior or restriction to an authorized requirement or
-   necessary supporting behavior. Task or design details must not
-   independently authorize new product policy; block material scope ambiguity.
-3. **Test adequacy:** Assess whether tests meaningfully verify intended
-   behavior through appropriate interfaces and would catch plausible
-   defects. Check expectations, assertions, and weakened coverage; passing
-   tests alone do not establish completion.
-4. **Compatibility & constraints:** Check affected existing behavior for
-   regressions and verify architectural boundaries, API contracts, data
-   integrity, and explicit nonfunctional requirements.
-5. **Security & reliability:** Check relevant vulnerabilities, concurrency
-   issues, resource handling, and operational risks introduced by the changes.
+Verify the coding agent's output across the following dimensions. Assess each dimension
+proportionately to the assigned task. If any is not applicable, briefly explain.
 
-Independently run relevant checks. Use targeted probes where existing
-evidence is insufficient; broaden execution according to integration and
-regression risk. Assess each dimension proportionately to the task; briefly
-explain when one is not applicable.
-
-For significant maintainability findings, require a concrete maintenance
-scenario demonstrating substantial cost or risk. Exclude stylistic
-preferences and speculative refactors.
-
-Verify the result, not whether the agent followed the TDD sequence.
+1. **Correctness:**
+   - Check acceptance criteria, expected behavior, relevant edge cases, error
+     handling, and domain invariants.
+2. **Completeness:**
+   - Trace every requirement, completion criterion and constraint in the user supplied
+     implementation context (assigned task, specification or additional context), to
+     verification **evidence**. Do not pass with any unaccounted for.
+   - Trace each implemented behavior or restriction back to a requirement or necessary
+     supporting behavior. Check for not implemented requirements, unsupported
+     assumptions, and scope deviations.
+3. **Test adequacy:**
+   - Assess whether tests meaningfully verify intended behavior through appropriate
+     interfaces and catch plausible defects.
+   - Check expectations, assertions, and weakened coverage. Passing tests alone do
+     not establish completion or correctness.
+4. **Compatibility & constraints:**
+   - Check affected existing behavior for regressions.
+   - Verify compliance with architectural decisions, constraints, module boundaries,
+     API contracts, and data integrity requirements.
+   - Do not impose undocumented architectural preferences.
+5. **Security & reliability:**
+   - Check relevant vulnerabilities, concurrency issues, resource handling, and operational
+     risks introduced by the changes.
+6. **Maintainability & evolvability:**
+   - Assess whether the implementation is easily readable and understandable by a human,
+     and proportionate to the problem scope.
+   - Identify changes that introduce friction or risk for foreseeable future changes:
+     unnecessary complexity, excessive coupling, low cohesion, duplicated business logic,
+     or unnecessary abstractions.
+   - Ground maintainability findings in concrete maintenance scenarios which
+     demonstrate substantial cost or risk. Exclude stylistic preferences and
+     speculative refactors.
 
 ## Verdict and report
 
-Return concise Markdown:
+Report using concise Markdown:
 
 - **Verdict:** pass | fail | blocked
 - **Evidence:** checks and outcomes by dimension, with requirement references
@@ -79,8 +89,9 @@ Use `fail` when concrete defects, unsupported scope, constraint violations,
 or significant maintainability problems are established. Preserve any
 additional blockers in the report.
 
-Otherwise use `blocked` when material ambiguity or missing evidence
-prevents a verdict. Use `pass` only when applicable requirements and dimensions
-are sufficiently verified and no qualifying findings remain.
+Use `blocked` when material ambiguity or missing evidence prevents a verdict.
 
-Omit empty findings and blockers. Do not add optional improvement lists.
+Use `pass` only when applicable requirements and dimensions are sufficiently
+verified and no qualifying findings remain.
+
+Omit empty findings and blockers. Do not report optional improvements.
