@@ -1,4 +1,4 @@
 interface:
-  display_name: "Verify"
+  display_name: "Verify Implementation"
   short_description: "Verify task results against requirements and constraints"
   default_prompt: "Use $verify to verify this task against the user prompt, specification, task plan, and explicit change boundary."
