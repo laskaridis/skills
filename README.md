@@ -51,3 +51,9 @@ I usually use these skills when delivering non-trivial features:
 - `plan` is only as good as the spec you feed into it, so make sure you review `spec.md` before delegating implementation.
 - `ddd` makes certain high-level (and reasonable) assumptions about your project strucutre. Make sure to read the skill before using it to establish compliance to your specific case.
 - `gh-review-pr` never edits the codebase or the PR branch; it only reads and posts a GitHub review (inline comments plus a sign-off). It requires the `gh` CLI to be authenticated against the target repository.
+
+## Evaluations
+
+The [evaluation harness and setup guide](evals/README.md), [plan suite](evals/plan/README.md),
+and [evaluation specifications](evals/specs/) live under `evals/`, along with all
+Node.js package metadata, dependencies, and development tooling.

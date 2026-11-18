@@ -1,0 +1,39 @@
+{
+  "description": "Result returned by the independent skill evaluator: one finding per requirement.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "description": "Exactly one finding per requirement supplied in bundle.json. There is no aggregate score or release decision.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence"],
+        "properties": {
+          "id": {
+            "description": "Exact requirement ID this finding grades, copied verbatim from the supplied requirements.",
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "description": "Verdict for the requirement: 'pass' if substantively satisfied, 'fail' if the required behavior is missing or wrong, 'ungradable' if evidence is missing or unusable (use this instead of failing for execution problems).",
+            "type": "string",
+            "enum": ["pass", "fail", "ungradable"]
+          },
+          "evidence": {
+            "description": "Supporting statements for the verdict, required for every status including pass. Each entry cites specific paths, task/criterion IDs, and short excerpts or precise descriptions. For omissions, name the required behavior and where evidence was expected; for ungradable, explain why.",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
