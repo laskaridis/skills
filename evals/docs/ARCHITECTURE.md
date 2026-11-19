@@ -2,7 +2,7 @@
 
 The harness runs a skill against fixture cases with an agent CLI (Codex by default,
 or Claude via `--agent`), then grades
-the outcome with a separate read-only judge of the same CLI. Agent-specific
+the outcome with a separate judge invocation of the same CLI. Agent-specific
 behaviour (arguments, skill directory and prompt, trace parsing, runtime
 isolation) lives in `lib/agents.ts`. It produces a self-contained
 artifact directory per run. There is no aggregate score or release gate; one
@@ -15,10 +15,16 @@ run per case is exploratory.
   optional judge controls.
 - **Validate before spending.** Everything that can be checked without a model
   is checked first (preflight), so a typo fails in seconds, not after minutes of model calls.
-- **Reproducible runs.** Inputs and harness code are archived into the run
-  directory, and the run executes from that archive. Hashes record what ran.
-- **Isolation.** Agent and judge run in separate temp workspaces with a temp
-  `CODEX_HOME` (only `auth.json` linked) and with user config and rules ignored.
+- **Traceable runs.** Skill, cases, grading inputs, and suite-hook source files
+  are archived with hashes. Cases and grading inputs are loaded from the archive,
+  but `checks.ts` and `judge-tests.ts` execute from the live suite checkout;
+  harness code is recorded by Git state rather than copied. This supports audit
+  and comparison, but the archive alone cannot reproduce the complete execution.
+- **Provider-specific isolation.** Agent and judge use separate workspaces.
+  Codex uses a temporary `CODEX_HOME`, workspace-write agent sandbox, and
+  read-only judge sandbox. Claude uses a temporary config directory only when
+  environment credentials are present; its judge has a restricted tool allowlist,
+  not an OS-level read-only sandbox.
 - **Separate between quality and infrastructure failures.** Requirement failures are results.
   Execution, judge or validator errors are infrastructure failures (exit 2).
 - **Evidence over inline prompts.** The judge reads files (rubric, schema,
@@ -45,7 +51,7 @@ CLI args
   │
   ▼
  [2] Archive inputs     artifacts/<runId>/inputs/{skill, evals/…}
-  │                    reload cases from the archive · hashes · temp CODEX_HOME
+  │                    reload cases from archive · hashes · provider-specific runtime
   ▼
  [3] For each case (sequential)
   │
@@ -57,7 +63,7 @@ CLI args
   │        ▼
   │   Deterministic checks (optional)
   │        ▼
-  │   Quality judge    bundle.json + rubric.md + schema.json     (read-only)
+  │   Quality judge    bundle.json + rubric.md + schema.json     (provider-specific restrictions)
   │        ▼
   │   result.json, workspace archive, delete temp workspace
   │
@@ -69,7 +75,9 @@ CLI args
 ```
 
 `results.json` and `report.md` are rewritten after every case, so an
-interrupted run still leaves partial results.
+interrupted run still leaves partial results. Suite checks and calibration
+controls run from the live checkout even though their source files are also
+archived; rerunning from the archive alone does not reproduce those hooks.
 
 ### Prompts
 
@@ -95,7 +103,7 @@ so a judge failure is never counted as a quality failure.
 
 ## Evaluation suite folder: `evals/<skill>/`
 
-A suite is named after the skill it evaluates (exaple `evals/plan/` for `skills/plan/`). The harness discovers everything by convention. Every evaluation suite needs at least one case defined as `cases/<id>/` and the following files included for each case:`prompt.md`, `expected.md` and `input/`.
+A suite is named after the skill it evaluates (example `evals/plan/` for `skills/plan/`). The harness discovers everything by convention. Every evaluation suite needs at least one case defined as `cases/<id>/` and the following files included for each case: `prompt.md`, `expected.md` and `input/`.
 
 ```
 evals/<skill>/
@@ -107,7 +115,7 @@ evals/<skill>/
   checks.ts              Optional: deterministic checks on output files and inputs.
   judge-tests.ts         Optional: good and bad controls for `--calibrate`.
   run.ts                 Optional: wrapper for `pnpm eval:<skill>`.
-  artifacts/<runId>/     Evaluation outputs (not commited in git history).
+  artifacts/<runId>/     Evaluation outputs (not committed in git history).
 ```
 
 | Artifact             | Purpose and conventions                                                                                                                                                                                                                                                                                                           |
@@ -115,7 +123,7 @@ evals/<skill>/
 | `cases/<id>/`        | One scenario; `<id>` is the name passed to `--case`. Safe names only. No `.git`, symlinks or non-regular files.                                                                                                                                                                                                                   |
 | `prompt.md`          | The user request. The harness prepends the explicit `$<skill>` invocation. Write it as a real request; do not mention the checklist.                                                                                                                                                                                              |
 | `expected.md`        | Requirements the quality judge grades: one `- [id] text` each, indented lines continue it. IDs are stable and unique, since results and `--compare` key on them.                                                                                                                                                                  |
-| `input/`             | Starting workspace, copied as-is and committed in a temp git repo. Mirror the layout the skill expects (e.g. `specs/…`). Checks treat any change as a failure. Use `.gitkeep` for an empty input.                                                                                                                                 |
+| `input/`             | Starting workspace, copied as-is and committed in a temp git repo. Mirror the layout the skill expects (e.g. `specs/…`). Fixture edits are allowed unless a suite-specific validator rejects them. Use `.gitkeep` for an empty input.                                                                                                                                 |
 | `checks.ts`          | Optional deterministic checks (output files, schema, protected inputs). Export `checkCase`, which receives `{caseId, workspace, initialSnapshot, finalResponse}` and returns `{status: pass \| fail, failures[]}`. The result goes to the judge as evidence. `plan/checks.ts` holds the plan structure and protected-input rules. |
 | `judge-tests.ts`     | Optional known good and bad controls for `--calibrate`. Export `controls`; include flawed outputs that look plausible.                                                                                                                                                                                                            |
 | `grading/`           | Suite-specific rubric (`*.md`) and schema (`*.schema.json`) pair. The harness reads only the shared `evals/grading/` files, so these are not loaded today.                                                                                                                                                                        |
@@ -128,7 +136,7 @@ Everything is under `evals/<skill>/artifacts/<runId>/`.
 
 ```
 results.json  report.md  baseline.json
-inputs/                    archived skill, harness, cases, parsed checklists
+inputs/                    archived skill, grading, cases, suite hooks and parsed checklists
 <case>/
   result.json
   initial-snapshot.json, initial-workspace*, workspace*
