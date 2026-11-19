@@ -32,7 +32,9 @@ Make the project's documentation accurate and current. Fix every discrepancy you
 
 11. **Keep rewrites small.** Anything beyond a minimal, mechanical change is flagged for review.
 
-12. **Safe execution.** Run only read-only commands (`--help`, `--version`) and the project's tests, linters and builds, and only when they do not mutate state outside the working tree. Never run anything that needs credentials. A failing test is evidence, not something to fix.
+12. **Write concisely.** Use the fewest words needed to capture the underlying information. Use concise, direct sentences. Remove repetition, generic introductions and filler words. Never sacrifice accuracy or clarity for brevity.
+
+13. **Safe execution.** Run only read-only commands (`--help`, `--version`) and the project's tests, linters and builds, and only when they do not mutate state outside the working tree. Never run anything that needs credentials. A failing test is evidence, not something to fix.
 
 ## Workflow
 
@@ -59,7 +61,7 @@ For code comments, check factual claims against the associated implementation, i
 
 ### 4. Report
 
-Summarise in the conversation, unless told otherwise. For each finding give its location, the claim, the evidence, and the action taken: `FIXED`, `FLAGGED` or `UNVERIFIED`. End with what you did not check and why.
+Report briefly in the conversation, unless told otherwise. Group related findings and avoid repeating unchanged or verified claims. For each actionable finding, give its location, a concise description, supporting evidence, and status: `FIXED`, `FLAGGED` or `UNVERIFIED`. Mention unchecked areas only when relevant, with the reason.
 
 ## Escalation
 
