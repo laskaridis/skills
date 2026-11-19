@@ -80,10 +80,14 @@ a whole suite can take longer.
 Each case gets a fresh temporary Git repository containing the skill at
 `.agents/skills/<skill>/` (`.claude/skills/<skill>/` with `--agent claude`) plus the fixture files; the agent may edit them.
 Expectations, judge instructions, and schemas stay outside that repository, and
-judges run separately with read-only settings on an evidence bundle. This is a
-convention, not a confidentiality guarantee against an agent reading outside its
-working directory. Temporary workspaces and session state are removed after the
-run; archived evidence remains.
+judges run separately on an evidence bundle. Codex uses a read-only judge
+sandbox and a temporary `CODEX_HOME`; Claude uses a restricted judge tool
+allowlist (`Read,Grep,Glob`) with `bypassPermissions`, not an OS-level read-only
+sandbox. For Claude, the config directory is temporary only when environment
+credentials are available; otherwise the existing login and config are inherited.
+These restrictions are not a confidentiality guarantee against access outside
+the working directory. Temporary workspaces and session state are removed after
+the run; archived evidence remains.
 
 ## Read a result
 
@@ -116,7 +120,7 @@ Artifacts are Git-ignored:
   report.md                 # Findings and evidence links
   results.json              # Format-version-2 results for tools/comparison
   baseline.json             # Copied baseline, with --compare
-  inputs/                   # Exact skill, case, grading, and suite-hook inputs (harness is hashed, not copied)
+  inputs/                   # Archived skill, cases, grading, and suite-hook source (harness code is not copied)
   <case>/
     result.json
     initial-snapshot.json   # File hashes before execution
@@ -133,7 +137,10 @@ Invocation directories keep `prompt.txt`, `command.json`, `trace.jsonl`,
 `bundle.json`, the rubric, schema, and `finding.json`. Start with `final.txt`
 for a response, `bundle.json` for what the judge saw, and `stderr.txt` for
 failures. Results also retain requested and observed settings, input hashes, and
-raw usage.
+raw usage. Archived suite-hook sources are evidence, but checks and calibration
+controls execute from the live checkout. Harness code is identified by Git
+state rather than archived, so the artifacts alone do not provide a fully
+replayable run.
 
 ## Compare a change with a baseline
 
