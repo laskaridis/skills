@@ -194,6 +194,48 @@ export async function loadCases(
   return cases;
 }
 
+export async function createCase(suite: string, caseId: string) {
+  if (!identifier.test(caseId)) {
+    throw new Error(`Unsafe case name: ${caseId}`);
+  }
+
+  await ordinaryDirectory(suite);
+
+  const cases = path.join(suite, 'cases');
+  const target = path.join(cases, caseId);
+
+  await fs.mkdir(cases, { recursive: true });
+
+  try {
+    await fs.mkdir(target);
+  } catch (error: any) {
+    if (error.code === 'EEXIST') {
+      throw new Error(`Case already exists: ${target}`, { cause: error });
+    }
+
+    throw error;
+  }
+
+  // The target is ours from here on, so remove it if scaffolding fails.
+  try {
+    await fs.mkdir(path.join(target, 'fixtures'));
+    await fs.writeFile(path.join(target, 'fixtures', '.gitkeep'), '');
+    await fs.writeFile(
+      path.join(target, 'prompt.md'),
+      "Describe the user's task here.\n",
+    );
+    await fs.writeFile(
+      path.join(target, 'expected.md'),
+      '- [requirement_id] Describe what the judge should verify.\n',
+    );
+  } catch (error) {
+    await fs.rm(target, { recursive: true, force: true });
+    throw error;
+  }
+
+  return target;
+}
+
 export async function archiveChecklists(
   cases: CaseDefinition[],
   suite: string,

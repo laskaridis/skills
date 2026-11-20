@@ -86,6 +86,7 @@ export interface RunOptions {
   judgeReasoning: string;
   grading: string;
   calibrate?: boolean;
+  create?: boolean;
   help?: boolean;
   compare?: string;
   case?: string;

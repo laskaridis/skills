@@ -9,7 +9,7 @@ import * as fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { archiveChecklists, loadCases } from './lib/cases.ts';
+import { archiveChecklists, createCase, loadCases } from './lib/cases.ts';
 import { calibrate } from './lib/calibration.ts';
 import { loadJudgeTests, loadDeterministicChecksFor } from './lib/loader.ts';
 import { AGENT_NAMES, DEFAULT_AGENT, getAgent } from './lib/agents.ts';
@@ -68,6 +68,11 @@ export function argumentsFor(argv: string[]): RunOptions {
       continue;
     }
 
+    if (arg === '--create') {
+      options.create = true;
+      continue;
+    }
+
     if (arg === '--help') {
       options.help = true;
       continue;
@@ -108,6 +113,14 @@ export function argumentsFor(argv: string[]): RunOptions {
     throw new Error('Unsafe skill name');
   }
 
+  if (options.create) {
+    if (!options.case) {
+      throw new Error('--create requires --case');
+    }
+
+    return options;
+  }
+
   options.agent ??= DEFAULT_AGENT;
 
   if (!options.model) {
@@ -138,7 +151,20 @@ export async function main(
 
   if (options.help) {
     console.log(
-      'pnpm eval SKILL --model MODEL [--agent codex|claude] [--skill DIR] [--case CASE_ID] [--judge-model MODEL] [--reasoning high] [--judge-reasoning high] [--compare RESULTS.json] [--calibrate]',
+      'pnpm eval SKILL --model MODEL [--agent codex|claude] [--skill DIR] [--case CASE_ID] [--judge-model MODEL] [--reasoning high] [--judge-reasoning high] [--compare RESULTS.json] [--calibrate]\n       pnpm eval SKILL --case CASE_ID --create',
+    );
+    return;
+  }
+
+  if (options.create) {
+    const created = await createCase(
+      path.join(evalRoot, options.skillName),
+      options.case!,
+    );
+
+    console.log(`Created ${created}`);
+    console.log(
+      `Edit prompt.md, expected.md and fixtures/, then run: pnpm eval ${options.skillName} --case ${options.case} --model MODEL`,
     );
     return;
   }

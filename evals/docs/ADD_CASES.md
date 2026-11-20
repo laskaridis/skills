@@ -10,6 +10,11 @@ A case is a directory under an existing skill (`skills/<skill>/`, or pass
   expected.md   # Evaluator's checklist, withheld from the agent
 ```
 
+Scaffold a new case with `pnpm eval <skill> --case <case> --create`. It creates
+`prompt.md`, `expected.md` (placeholders that already parse) and
+`fixtures/.gitkeep`. It fails without changing anything if the skill directory
+is missing (a mistyped skill is not created) or the case already exists.
+
 No manifest, schema, rubric, or validator is required. Keep fixtures small and
 write expectations before looking at outputs. The harness prefixes `prompt.md`
 with an explicit invocation of the skill; put the task in the prompt and

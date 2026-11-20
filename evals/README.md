@@ -59,18 +59,19 @@ sorted order. All case definitions are validated before any model call, even whe
 one case is selected; unknown IDs and malformed cases fail early. Scripts run
 TypeScript through Node's native type stripping, so there is no build step.
 
-| Option                     | What it does                                                                                                      |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `--agent AGENT`            | Agent CLI: `codex` or `claude`. Defaults to `codex`. Judge uses the same CLI.                                     |
-| `--model MODEL`            | Agent model. Required for live runs.                                                                              |
-| `--case CASE_ID`           | Run one case instead of all.                                                                                      |
-| `--skill DIR`              | Load the skill from `DIR` (must contain `SKILL.md`) instead of `skills/<skill>`.                                  |
-| `--judge-model MODEL`      | Judge model. Defaults to the agent's model.                                                                       |
-| `--reasoning EFFORT`       | Agent reasoning effort. Defaults to `high`; use a value your model supports.                                      |
-| `--judge-reasoning EFFORT` | Judge reasoning effort. Defaults to the agent's.                                                                  |
-| `--compare FILE`           | Compare against an earlier `results.json`. Still runs agent and judge.                                            |
-| `--calibrate`              | Also judge every prepared control in the suite (see [controls](docs/ADD_CASES.md#check-the-judge-with-controls)). |
-| `--help`                   | Print syntax.                                                                                                     |
+| Option                     | What it does                                                                                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--agent AGENT`            | Agent CLI: `codex` or `claude`. Defaults to `codex`. Judge uses the same CLI.                                                                       |
+| `--model MODEL`            | Agent model. Required for live runs.                                                                                                                |
+| `--case CASE_ID`           | Run one case instead of all.                                                                                                                        |
+| `--skill DIR`              | Load the skill from `DIR` (must contain `SKILL.md`) instead of `skills/<skill>`.                                                                    |
+| `--judge-model MODEL`      | Judge model. Defaults to the agent's model.                                                                                                         |
+| `--reasoning EFFORT`       | Agent reasoning effort. Defaults to `high`; use a value your model supports.                                                                        |
+| `--judge-reasoning EFFORT` | Judge reasoning effort. Defaults to the agent's.                                                                                                    |
+| `--compare FILE`           | Compare against an earlier `results.json`. Still runs agent and judge.                                                                              |
+| `--calibrate`              | Also judge every prepared control in the suite (see [controls](docs/ADD_CASES.md#check-the-judge-with-controls)).                                   |
+| `--create`                 | With `--case`, scaffold `<skill>/cases/<CASE_ID>/` (prompt, checklist, fixtures). Fails if the skill is missing or the case exists; needs no model. |
+| `--help`                   | Print syntax.                                                                                                                                       |
 
 Each agent or judge invocation has a fixed ten-minute timeout with no override;
 a whole suite can take longer.

@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { temporary, put } from './helpers.ts';
-import { parseChecklist, loadCases, archiveChecklists } from '../lib/cases.ts';
+import {
+  parseChecklist,
+  loadCases,
+  archiveChecklists,
+  createCase,
+} from '../lib/cases.ts';
 import { readJSON } from '../lib/utils.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
@@ -253,4 +258,121 @@ test('case order does not depend on filesystem enumeration order', async (t) => 
     cases.map((c) => c.id),
     ['a-first', 'z-last'],
   );
+});
+
+test('createCase scaffolds a case that loads', async (t) => {
+  // Given
+  const root = await temporary(t);
+
+  // When
+  const directory = await createCase(root, 'fresh');
+
+  // Then
+  assert.equal(directory, path.join(root, 'cases', 'fresh'));
+  assert.ok((await fs.stat(path.join(directory, 'prompt.md'))).isFile());
+  assert.ok((await fs.stat(path.join(directory, 'expected.md'))).isFile());
+  assert.ok(
+    (await fs.stat(path.join(directory, 'fixtures', '.gitkeep'))).isFile(),
+  );
+
+  const [loaded] = await loadCases(root, 'skill');
+
+  assert.equal(loaded.id, 'fresh');
+  assert.equal(loaded.requirements.length, 1);
+});
+
+test('createCase fails without modifying an existing case', async (t) => {
+  // Given
+  const root = await temporary(t);
+
+  await put(root, 'cases/fresh/prompt.md', 'Keep');
+
+  // When
+  const act = createCase(root, 'fresh');
+
+  // Then
+  await assert.rejects(act, /Case already exists/);
+  assert.equal(
+    await fs.readFile(path.join(root, 'cases/fresh/prompt.md'), 'utf8'),
+    'Keep',
+  );
+  assert.deepEqual(await fs.readdir(path.join(root, 'cases/fresh')), [
+    'prompt.md',
+  ]);
+});
+
+test('createCase rejects unsafe identifiers', async (t) => {
+  // Given
+  const root = await temporary(t);
+
+  // When
+  const act = createCase(root, '../x');
+
+  // Then
+  await assert.rejects(act, /Unsafe case/);
+});
+
+test('createCase requires an existing suite and creates nothing', async (t) => {
+  // Given
+  const root = await temporary(t);
+  const suite = path.join(root, 'pln');
+
+  // When
+  const act = createCase(suite, 'x');
+
+  // Then
+  await assert.rejects(act, /Missing directory/);
+  assert.deepEqual(await fs.readdir(root), []);
+});
+
+test('createCase creates cases/ inside an existing suite', async (t) => {
+  // Given
+  const root = await temporary(t);
+
+  // When
+  const directory = await createCase(root, 'fresh');
+
+  // Then
+  assert.ok((await fs.stat(directory)).isDirectory());
+});
+
+test('createCase removes the partial case when a write fails', async (t) => {
+  // Given
+  const root = await temporary(t);
+
+  await put(root, 'cases/other/fixtures/.gitkeep');
+
+  const failure = new Error('disk full');
+  const spy = vi.spyOn(fs, 'writeFile').mockRejectedValueOnce(failure);
+
+  t.onTestFinished(() => spy.mockRestore());
+
+  // When
+  const act = createCase(root, 'fresh');
+
+  // Then
+  await assert.rejects(act, /disk full/);
+  assert.deepEqual(await fs.readdir(path.join(root, 'cases')), ['other']);
+});
+
+test('createCase rethrows unexpected errors creating the target', async (t) => {
+  // Given
+  const root = await temporary(t);
+  const real = fs.mkdir;
+  const failure = Object.assign(new Error('denied'), { code: 'EACCES' });
+  const spy = vi.spyOn(fs, 'mkdir').mockImplementation(async (dir, options) => {
+    if (String(dir).endsWith('fresh')) {
+      throw failure;
+    }
+
+    return real(dir, options as any);
+  });
+
+  t.onTestFinished(() => spy.mockRestore());
+
+  // When
+  const act = createCase(root, 'fresh');
+
+  // Then
+  await assert.rejects(act, /denied/);
 });

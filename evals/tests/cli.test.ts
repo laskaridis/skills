@@ -52,6 +52,62 @@ test('arguments resolve defaults and all supported overrides', () => {
   assert.equal(help.help, true);
 });
 
+test('create flag needs a case but no model', () => {
+  // When
+  const options = argumentsFor(['plan', '--case', 'x', '--create']);
+  const act = () => argumentsFor(['plan', '--create']);
+
+  // Then
+  assert.equal(options.create, true);
+  assert.equal(options.case, 'x');
+  assert.throws(act, /--case/);
+});
+
+test('main scaffolds a case without calling the agent', async (t) => {
+  // Given
+  const root = await temporary(t);
+
+  await fs.mkdir(path.join(root, 'plan'));
+  const calls: TransportCall[] = [];
+  const transport = fakeTransport({}, calls);
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+  t.onTestFinished(() => log.mockRestore());
+
+  // When
+  await main(['plan', '--case', 'x', '--create'], {
+    evalRoot: root,
+    transport,
+  });
+
+  // Then
+  const directory = path.join(root, 'plan', 'cases', 'x');
+
+  assert.ok((await fs.stat(path.join(directory, 'prompt.md'))).isFile());
+  assert.ok((await fs.stat(path.join(directory, 'expected.md'))).isFile());
+  assert.ok((await fs.stat(path.join(directory, 'fixtures'))).isDirectory());
+  assert.equal(calls.length, 0);
+});
+
+test('main fails when the scaffolded case already exists', async (t) => {
+  // Given
+  const root = await temporary(t);
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+  t.onTestFinished(() => log.mockRestore());
+  await put(root, 'plan/cases/x/prompt.md', 'Keep');
+
+  // When
+  const act = main(['plan', '--case', 'x', '--create'], { evalRoot: root });
+
+  // Then
+  await assert.rejects(act, /already exists/);
+  assert.equal(
+    await fs.readFile(path.join(root, 'plan/cases/x/prompt.md'), 'utf8'),
+    'Keep',
+  );
+});
+
 for (const args of [
   [],
   ['plan'],
