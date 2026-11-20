@@ -20,7 +20,6 @@ capture, and implicit assumptions.
 From `evals/`:
 
 ```sh
-pnpm test tests/specify.test.ts             # offline checks
 pnpm eval specify --model YOUR_MODEL --case complete
 pnpm eval specify --model YOUR_MODEL --case complete --calibrate
 ```
