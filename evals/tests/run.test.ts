@@ -253,6 +253,21 @@ test('runSuite stops starting cases once the run is cancelled', async (t) => {
   assert.equal(run.calls.length > 0, true);
 });
 
+test('runSuite runs every case when no cancellation signal is given', async (t) => {
+  // Given
+  const run = await suiteRun(t, {}, { signal: undefined });
+
+  // When
+  await run.start(run.cases);
+
+  // Then
+  assert.deepEqual(
+    run.results.cases.map((c) => c.case),
+    ['basic', 'second'],
+  );
+  assert.equal(run.results.cancelled, undefined);
+});
+
 test('runSuite calibrates after the cases unless the run was cancelled', async (t) => {
   // Given
   const control: Control = {
