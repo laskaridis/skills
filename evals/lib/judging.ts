@@ -76,18 +76,19 @@ export async function judge(
       requirements,
     });
 
+    await fs.copyFile(
+      path.join(directory, 'bundle.json'),
+      path.join(workspace, 'bundle.json'),
+    );
+
     for (const [source, target] of [
       ['quality.schema.json', 'schema.json'],
       ['rubric.md', 'rubric.md'],
     ]) {
       await fs.copyFile(
         path.join(options.grading, source),
-        path.join(directory, target),
+        path.join(workspace, target),
       );
-    }
-
-    for (const file of ['bundle.json', 'schema.json', 'rubric.md']) {
-      await fs.copyFile(path.join(directory, file), path.join(workspace, file));
     }
 
     gitInit(workspace);

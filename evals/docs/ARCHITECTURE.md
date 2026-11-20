@@ -63,7 +63,7 @@ CLI args
   │        ▼
   │   Deterministic checks (optional)
   │        ▼
-  │   Quality judge (optional) bundle.json + rubric.md + schema.json     (provider-specific restrictions)
+  │   Quality judge (optional) temp workspace: bundle.json + rubric.md + schema.json (provider-specific restrictions)
   │        ▼
   │   result.json, workspace archive, delete temp workspace
   │
@@ -119,7 +119,7 @@ inputs/                    archived skill, grading, cases, suite hooks and parse
   result.json
   workspace*
   agent/         prompt.txt command.json trace.jsonl stderr.txt final.txt execution.json
-  judge-quality/   bundle.json rubric.md schema.json + run files
+  judge-quality/   bundle.json + run files
 calibration/<control>/
 ```
 

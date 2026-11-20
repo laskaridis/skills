@@ -110,6 +110,8 @@ for (const [name, config, expected] of [
       requirements,
     );
     await assert.rejects(fs.access(calls[0].workspace));
+    await assert.rejects(fs.access(path.join(directory, 'schema.json')));
+    await assert.rejects(fs.access(path.join(directory, 'rubric.md')));
 
     if (expected === 'ok') {
       assert.deepEqual(
@@ -121,6 +123,50 @@ for (const [name, config, expected] of [
     }
   });
 }
+
+test('judge workspace holds the grading files and the bundle', async (t) => {
+  // Given
+  const { root, options } = await fixture(t);
+  const calls: TransportCall[] = [];
+  const seen: Record<string, string> = {};
+  const transport = fakeTransport(
+    {
+      onCall: async ({ workspace }) => {
+        for (const file of ['rubric.md', 'schema.json', 'bundle.json']) {
+          seen[file] = await fs.readFile(path.join(workspace, file), 'utf8');
+        }
+      },
+    },
+    calls,
+  );
+  const rubric = await fs.readFile(
+    path.join(options.grading, 'rubric.md'),
+    'utf8',
+  );
+  const schema = await fs.readFile(
+    path.join(options.grading, 'quality.schema.json'),
+    'utf8',
+  );
+
+  // When
+  const result = await judge(
+    { ...options, transport },
+    root,
+    path.join(root, 'judge'),
+    requirements,
+    { stage: 'final' },
+  );
+
+  // Then
+  assert.equal(result.status, 'ok');
+  assert.equal(seen['rubric.md'], rubric);
+  assert.equal(seen['schema.json'], schema);
+  assert.deepEqual(JSON.parse(seen['bundle.json']).requirements, requirements);
+  assert.equal(
+    calls[0].mode.schema,
+    path.join(calls[0].workspace, 'schema.json'),
+  );
+});
 
 for (const name of ['transport', 'grading']) {
   test(`judge cleans workspace after ${name} throws`, async (t) => {
