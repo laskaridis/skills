@@ -24,10 +24,10 @@ pnpm eval specify --model YOUR_MODEL --case complete
 pnpm eval specify --model YOUR_MODEL --case complete --calibrate
 ```
 
-The seven [calibration controls](judge-tests.ts) include one fully correct
-reference spec and six intentionally defective variants. The expected results
-include multi-criterion failures where a defect necessarily changes scope.
-They run with `--calibrate` and consume seven additional judge calls.
-Check for `grader_disagreement` in the report; these controls detect specific
-judge errors but do not establish general judge accuracy or reproducibility.
+The two [calibration controls](judge-tests.ts) include one fully correct
+reference spec (all six criteria pass) and one combined defective spec (all six
+criteria fail). They run with `--calibrate` and consume two additional judge
+calls instead of seven. Check for `grader_disagreement` in the report. Because
+all defects are combined, failures identify misgraded criteria but do not isolate
+a specific defect; these controls do not establish judge accuracy or reproducibility.
 A live evaluation and calibration require an authenticated Codex or Claude CLI.
