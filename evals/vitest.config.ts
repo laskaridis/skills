@@ -9,7 +9,7 @@ export default defineConfig({
     silent: 'passed-only',
     coverage: {
       provider: 'v8',
-      include: ['run.ts', 'lib/*.ts'],
+      include: ['run.ts', 'lib/*.ts', 'skills/plan/{checks,judge-tests}.ts'],
       exclude: ['lib/types.ts'],
       reporter: ['text', 'json', 'html'],
       thresholds: {
