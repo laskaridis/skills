@@ -6,6 +6,7 @@ export default defineConfig({
     fileParallelism: false,
     pool: 'forks',
     testTimeout: 15000,
+    silent: 'passed-only',
     coverage: {
       provider: 'v8',
       include: ['run.ts', 'lib/*.ts', 'plan/{run,checks,judge-tests}.ts'],
