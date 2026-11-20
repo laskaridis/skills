@@ -310,3 +310,18 @@ test('comparison reports differing agents and treats missing agents as codex', (
   assert.ok(differing.limitations.some((x) => x.includes('Agent differs')));
   assert.ok(!same.limitations.some((x) => x.includes('Agent differs')));
 });
+
+test('reports flag cancelled runs as partial', () => {
+  // Given
+  const value = run();
+  const plain = report(run());
+
+  value.cancelled = true;
+
+  // When
+  const text = report(value);
+
+  // Then
+  assert.ok(text.includes('Cancelled by SIGINT/SIGTERM'));
+  assert.ok(!plain.includes('Cancelled'));
+});

@@ -169,7 +169,7 @@ test('capture forwards parent interrupts to process group', async (t) => {
 
   // Then
   assert.equal(result.signal, 'SIGTERM');
-  assert.equal(result.status, 'execution_error');
+  assert.equal(result.status, 'cancelled');
 });
 
 test('capture escalates timeout termination when the process group stays alive', async (t) => {
@@ -336,4 +336,56 @@ test('capture records non-EPIPE stdin failures and tolerates EPIPE', async (t) =
     assert.equal(result.status, code === 'EPIPE' ? 'ok' : 'execution_error');
     assert.equal(result.spawn_error, code === 'EPIPE' ? null : 'stdin failed');
   }
+});
+
+test('capture stops the child when the run signal aborts', async (t) => {
+  // Given
+  const root = await temporary(t);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 100);
+
+  t.onTestFinished(() => clearTimeout(timer));
+
+  // When
+  const result = await capture(
+    process.execPath,
+    ['-e', 'setInterval(()=>{},1000)'],
+    {
+      cwd: root,
+      directory: path.join(root, 'call'),
+      timeout: 3000,
+      signal: controller.signal,
+    },
+  );
+
+  // Then
+  assert.equal(result.status, 'cancelled');
+  assert.equal(result.signal, 'SIGTERM');
+});
+
+test('invoke starts no model call once the run is cancelled', async (t) => {
+  // Given
+  const root = await temporary(t);
+  const controller = new AbortController();
+
+  controller.abort();
+
+  // When
+  const result = await invoke(
+    {
+      model: 'agent',
+      judgeModel: 'judge',
+      reasoning: 'high',
+      judgeReasoning: 'low',
+      signal: controller.signal,
+    },
+    root,
+    root,
+    path.join(root, 'call'),
+    'Task',
+  );
+
+  // Then
+  assert.equal(result.status, 'cancelled');
+  await assert.rejects(fs.access(path.join(root, 'call')));
 });

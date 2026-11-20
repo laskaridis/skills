@@ -91,6 +91,8 @@ export interface RunOptions {
   compare?: string;
   case?: string;
   timeout?: number;
+  // Run-level cancellation: aborted on SIGINT/SIGTERM; no new model calls start.
+  signal?: AbortSignal;
   transport?: Transport;
   checkCase?: CheckCase;
 }
@@ -171,4 +173,5 @@ export interface RunResults {
   observed_settings?: JsonRecord;
   calibration?: CalibrationResult;
   comparison?: Comparison;
+  cancelled?: boolean;
 }

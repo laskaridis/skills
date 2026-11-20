@@ -413,3 +413,53 @@ test('orchestrator falls back to home authentication path without reading real c
   // Then
   assert.equal(result!.results.cases[0].execution.status, 'ok');
 });
+
+test('SIGTERM during the first case cancels the whole suite', async (t) => {
+  // Given
+  const { args, deps, suite } = await environment(t);
+  const calls: TransportCall[] = [];
+  const initialInt = process.listenerCount('SIGINT');
+  const initialTerm = process.listenerCount('SIGTERM');
+
+  await put(
+    suite,
+    'judge-tests.ts',
+    "export const controls = [{id:'prepared',caseId:'z-last',generatedFiles:{},finalResponse:'Done',expected:{accurate:'pass'}}];",
+  );
+  deps.transport = fakeTransport(
+    {
+      onCall: ({ stage }) => {
+        if (stage === 'agent') {
+          process.emit('SIGTERM');
+        }
+      },
+    },
+    calls,
+  );
+
+  // When
+  const result = await main([...args, '--calibrate'], deps);
+  const saved = await readJSON(path.join(result!.directory, 'results.json'));
+
+  // Then
+  assert.equal(process.exitCode, 130);
+  assert.deepEqual(
+    calls.map((c) => c.stage),
+    ['agent'],
+  );
+  assert.equal(result!.results.cancelled, true);
+  assert.equal(result!.results.calibration, undefined);
+  assert.deepEqual(
+    saved.cases.map((c: { case: string }) => c.case),
+    ['a-first'],
+  );
+  assert.equal(saved.cancelled, true);
+  assert.equal(saved.calibration, undefined);
+
+  await fs.access(path.join(result!.directory, 'a-first/result.json'));
+  await fs.access(path.join(result!.directory, 'report.md'));
+  await assert.rejects(fs.access(path.join(result!.directory, 'z-last')));
+
+  assert.equal(process.listenerCount('SIGINT'), initialInt);
+  assert.equal(process.listenerCount('SIGTERM'), initialTerm);
+});

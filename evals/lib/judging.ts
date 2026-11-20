@@ -61,6 +61,10 @@ export async function judge(
   requirements: Requirement[],
   bundle: JsonRecord,
 ): Promise<JudgeResult> {
+  if (options.signal?.aborted) {
+    return { status: 'cancelled' };
+  }
+
   await fs.mkdir(directory, { recursive: true });
   const workspace = await fs.mkdtemp(
     path.join(os.tmpdir(), 'skill-eval-judge-'),

@@ -26,6 +26,7 @@ export async function capture(
     prompt = '',
     timeout = TIMEOUT,
     parse = parseCodexTrace,
+    signal: runSignal,
   }: {
     cwd: string;
     env?: NodeJS.ProcessEnv;
@@ -33,6 +34,7 @@ export async function capture(
     prompt?: string;
     timeout?: number;
     parse?: (raw: string) => Trace;
+    signal?: AbortSignal;
   },
   {
     platform = process.platform,
@@ -60,6 +62,7 @@ export async function capture(
   const stderr = createWriteStream(path.join(directory, 'stderr.txt'));
   const started = Date.now();
   let timedOut = false;
+  let cancelled = false;
   let spawnError: string | null = null;
   const child = spawnProcess(command, args, {
     cwd,
@@ -80,7 +83,12 @@ export async function capture(
     }
   };
 
-  const onInterrupt = () => kill('SIGTERM');
+  const onInterrupt = () => {
+    cancelled = true;
+    kill('SIGTERM');
+  };
+
+  runSignal?.addEventListener('abort', onInterrupt, { once: true });
 
   process.once('SIGINT', onInterrupt);
   process.once('SIGTERM', onInterrupt);
@@ -112,6 +120,7 @@ export async function capture(
   // A referenced timer prevents the runner exiting while tool children remain alive.
   process.removeListener('SIGINT', onInterrupt);
   process.removeListener('SIGTERM', onInterrupt);
+  runSignal?.removeEventListener('abort', onInterrupt);
   await Promise.all([finished(stdout), finished(stderr)]);
   const { final, ...trace } = parse(
     await fs.readFile(path.join(directory, 'trace.jsonl'), 'utf8'),
@@ -132,13 +141,15 @@ export async function capture(
 
   const status = timedOut
     ? 'timeout'
-    : spawnError ||
-        code !== 0 ||
-        trace.failed ||
-        !trace.completed ||
-        trace.parse_errors.length
-      ? 'execution_error'
-      : 'ok';
+    : cancelled
+      ? 'cancelled'
+      : spawnError ||
+          code !== 0 ||
+          trace.failed ||
+          !trace.completed ||
+          trace.parse_errors.length
+        ? 'execution_error'
+        : 'ok';
   const result = {
     status,
     exit_code: code,
@@ -163,6 +174,7 @@ export async function invoke(
     | 'reasoning'
     | 'judgeReasoning'
     | 'timeout'
+    | 'signal'
   >,
   runtime: string,
   cwd: string,
@@ -170,6 +182,11 @@ export async function invoke(
   prompt: string,
   mode: InvocationMode = {},
 ): Promise<Execution> {
+  if (options.signal?.aborted) {
+    // The run was cancelled: never start another paid model call.
+    return { status: 'cancelled', final_response: '' };
+  }
+
   const agent = getAgent(options.agent);
   const { args, env } = await agent.args(options, runtime, directory, mode);
   const execution = await capture(agent.binary, args, {
@@ -178,6 +195,7 @@ export async function invoke(
     prompt,
     env,
     timeout: options.timeout ?? TIMEOUT,
+    signal: options.signal,
     parse: agent.parseTrace,
   });
 

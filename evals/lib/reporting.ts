@@ -241,6 +241,9 @@ export function report(results: RunResults) {
     '',
     `Run: ${results.run_id}`,
     '',
+    ...(results.cancelled
+      ? ['**Cancelled by SIGINT/SIGTERM; results are partial.**', '']
+      : []),
     `Agent: ${results.settings.model} (${results.settings.reasoning}); judge: ${results.settings.judge_model} (${results.settings.judge_reasoning}).`,
     `CLI: ${results.settings.agent ?? 'codex'} ${results.settings.cli_version}; Node: ${results.settings.node_version}.`,
     `Skill SHA-256: \`${results.skill_hash}\`.`,

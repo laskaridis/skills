@@ -107,7 +107,10 @@ mean the agent passed. Read the cited evidence before acting.
 
 Exit codes: **0** means the experiment completed, even if requirements or checks
 failed; **2** means an infrastructure or harness failure (timeout, invalid judge
-output, thrown validator error, invalid case). Do not use exit 0 as a quality
+output, thrown validator error, invalid case); **130** means the run was
+cancelled by SIGINT or SIGTERM: the current agent stops, no further agent, judge
+or calibration calls start, and the partial evidence is archived with
+`cancelled: true` in `results.json`. Do not use exit 0 as a quality
 gate: there is no aggregate score. One run per case is exploratory; repeat before
 trusting marginal changes.
 

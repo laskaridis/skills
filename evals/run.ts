@@ -274,6 +274,13 @@ export async function main(
     path.join(os.tmpdir(), 'skill-eval-runtime-'),
   );
 
+  const cancellation = new AbortController();
+  const onInterrupt = () => cancellation.abort();
+
+  options.signal = cancellation.signal;
+  process.once('SIGINT', onInterrupt);
+  process.once('SIGTERM', onInterrupt);
+
   try {
     await agent.prepareRuntime(runtime);
 
@@ -283,6 +290,10 @@ export async function main(
     for (const item of cases.filter(
       (c) => !options.case || c.id === options.case,
     )) {
+      if (cancellation.signal.aborted) {
+        break;
+      }
+
       const result = await busy(item.id, () =>
         runCase(options, runtime, directory, item),
       );
@@ -292,23 +303,28 @@ export async function main(
       await persist();
     }
 
-    if (options.calibrate) {
+    if (options.calibrate && !cancellation.signal.aborted) {
       results.calibration = await busy('calibration', () =>
         calibrate(options, runtime, directory, cases, controls),
       );
       printCalibration(results.calibration);
     }
 
+    results.cancelled = cancellation.signal.aborted || undefined;
     await persist();
 
     printSummary(results, directory, Date.now() - started);
 
-    if (infrastructureFailure(results)) {
+    if (results.cancelled) {
+      process.exitCode = 130;
+    } else if (infrastructureFailure(results)) {
       process.exitCode = 2;
     }
 
     return { directory, results };
   } finally {
+    process.removeListener('SIGINT', onInterrupt);
+    process.removeListener('SIGTERM', onInterrupt);
     await fs.rm(runtime, { recursive: true, force: true });
   }
 }

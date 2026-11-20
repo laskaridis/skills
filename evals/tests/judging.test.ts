@@ -149,3 +149,29 @@ for (const name of ['transport', 'grading']) {
     }
   });
 }
+
+test('judge starts no model call once the run is cancelled', async (t) => {
+  // Given
+  const { root, options } = await fixture(t);
+  const calls: TransportCall[] = [];
+  const controller = new AbortController();
+
+  controller.abort();
+
+  // When
+  const result = await judge(
+    {
+      ...options,
+      signal: controller.signal,
+      transport: fakeTransport({}, calls),
+    },
+    root,
+    path.join(root, 'judge'),
+    requirements,
+    { stage: 'final' },
+  );
+
+  // Then
+  assert.equal(result.status, 'cancelled');
+  assert.equal(calls.length, 0);
+});
