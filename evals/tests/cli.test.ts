@@ -10,7 +10,6 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { argumentsFor, main } from '../run.ts';
-import * as compatibility from '../skills/plan/run.ts';
 import { temporary, put, fakeCodex, fakeTransport, EVALS } from './helpers.ts';
 import { readJSON } from '../lib/utils.ts';
 
@@ -127,31 +126,20 @@ for (const args of [
   });
 }
 
-test('shared and compatibility CLI expose help, reject removed self-test and missing model', () => {
-  // Given
-  const files = ['run.ts', 'skills/plan/run.ts'];
+test('CLI exposes help, rejects removed self-test and missing model', () => {
+  for (const args of [['--help'], ['--self-test'], []]) {
+    // When
+    const result = spawnSync(
+      process.execPath,
+      ['--experimental-strip-types', path.join(EVALS, 'run.ts'), ...args],
+      { encoding: 'utf8' },
+    );
 
-  // Then
-  assert.equal(typeof compatibility.checkStructure, 'function');
-  assert.equal(typeof compatibility.capture, 'function');
-  assert.equal(typeof compatibility.compareResults, 'function');
-  assert.equal(typeof compatibility.parseTrace, 'function');
+    // Then
+    assert.equal(result.status, args[0] === '--help' ? 0 : 2);
 
-  for (const file of files) {
-    for (const args of [['--help'], ['--self-test'], []]) {
-      // When
-      const result = spawnSync(
-        process.execPath,
-        ['--experimental-strip-types', path.join(EVALS, file), ...args],
-        { encoding: 'utf8' },
-      );
-
-      // Then
-      assert.equal(result.status, args[0] === '--help' ? 0 : 2);
-
-      if (args[0] === '--help') {
-        assert.ok(!result.stdout.includes('--self-test'));
-      }
+    if (args[0] === '--help') {
+      assert.ok(!result.stdout.includes('--self-test'));
     }
   }
 });

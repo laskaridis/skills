@@ -59,4 +59,3 @@ jobs:
       - name: Check CLI entry points
         run: |
           pnpm eval --help
-          pnpm eval:plan --help

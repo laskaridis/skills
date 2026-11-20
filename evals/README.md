@@ -51,7 +51,6 @@ always manual.
 ```sh
 pnpm eval plan --model YOUR_MODEL                    # all cases
 pnpm eval plan --model YOUR_MODEL --case ambiguous   # one case
-pnpm eval:plan --model YOUR_MODEL --case complete    # plan-specific entry point
 ```
 
 Case IDs are directory names under `skills/<skill>/cases/`. Cases run sequentially in

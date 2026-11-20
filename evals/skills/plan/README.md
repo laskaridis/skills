@@ -6,7 +6,7 @@ documents prerequisites, options, artifacts, and results. Run from `evals/`:
 ```sh
 pnpm eval plan --model gpt-6.1-sol --calibrate
 pnpm eval plan --model gpt-6.1-sol --case complete
-pnpm eval:plan --skill ../skills/plan --model gpt-6.1-sol \
+pnpm eval plan --skill ../skills/plan --model gpt-6.1-sol \
   --compare skills/plan/artifacts/BASELINE_RUN_ID/results.json
 pnpm test tests/plan.test.ts   # offline, no Codex calls
 ```

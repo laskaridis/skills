@@ -20,7 +20,6 @@
   },
   "scripts": {
     "eval": "node --experimental-strip-types run.ts",
-    "eval:plan": "node --experimental-strip-types skills/plan/run.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
