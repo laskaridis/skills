@@ -39,18 +39,19 @@ The fixture's README mentions a script absent from `package.json`; success means
 fixing that command while preserving everything else.
 
 ```sh
-mkdir -p doc-gardening/cases/stale-command/fixtures
-cat > doc-gardening/cases/stale-command/fixtures/package.json <<'JSON'
+# Run from evals/
+mkdir -p skills/skills/doc-gardening/cases/stale-command/fixtures
+cat > skills/doc-gardening/cases/stale-command/fixtures/package.json <<'JSON'
 {"scripts":{"test":"node --test"}}
 JSON
-cat > doc-gardening/cases/stale-command/fixtures/README.md <<'MD'
+cat > skills/doc-gardening/cases/stale-command/fixtures/README.md <<'MD'
 # Example
 Run the tests with `pnpm check`.
 MD
-cat > doc-gardening/cases/stale-command/prompt.md <<'MD'
+cat > skills/doc-gardening/cases/stale-command/prompt.md <<'MD'
 Review README.md against package.json and fix the documented test command.
 MD
-cat > doc-gardening/cases/stale-command/expected.md <<'MD'
+cat > skills/doc-gardening/cases/stale-command/expected.md <<'MD'
 - [accurate_command] README.md tells readers to run pnpm test, consistent with package.json.
   Accept pnpm run test as an equivalent command.
 - [focused_change] Preserve package.json and unrelated documentation content.
@@ -101,7 +102,7 @@ Use `evals/skills/<skill>/checks.ts` for conditions better verified exactly: val
 required paths, unchanged fixtures. Export `checkCase`:
 
 ```ts
-import type { CheckContext } from '../lib/types.ts';
+import type { CheckContext } from '../../lib/types.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
