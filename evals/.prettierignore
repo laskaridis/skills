@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+coverage/
+**/artifacts/
+# Preserve fixture bytes and historical reports/specifications.
+**/cases/
+**/fixtures/
+**/private/
+skills/*/grading/
+specs/
+pnpm-lock.yaml
