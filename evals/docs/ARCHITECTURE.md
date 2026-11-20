@@ -140,4 +140,3 @@ Each `CaseResult` has independent channels:
 
 If the agent or judge fails, requirements are marked `ungradable`, not `fail`,
 so a judge failure is never counted as a quality failure.
-
