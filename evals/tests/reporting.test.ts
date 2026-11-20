@@ -325,3 +325,73 @@ test('reports flag cancelled runs as partial', () => {
   assert.ok(text.includes('Cancelled by SIGINT/SIGTERM'));
   assert.ok(!plain.includes('Cancelled'));
 });
+
+const clean = (
+  commit: string | null = 'aaaaaaa1111111',
+  dirty = false,
+): any => ({
+  commit,
+  dirty,
+});
+
+const harnessLimitations = (previous: any, current: any) => {
+  const before = run();
+  const after = run();
+
+  before.harness_git = previous;
+  after.harness_git = current;
+
+  return compareResults(before, after).limitations.filter((x) =>
+    x.startsWith('Harness'),
+  );
+};
+
+test('comparison accepts the same clean harness commit', () => {
+  // When
+  const limitations = harnessLimitations(clean(), clean());
+
+  // Then
+  assert.deepEqual(limitations, []);
+});
+
+test('comparison reports differing harness commits', () => {
+  // When
+  const limitations = harnessLimitations(clean(), clean('bbbbbbb2222222'));
+
+  // Then
+  assert.equal(limitations.length, 1);
+  assert.ok(limitations[0].includes('commits differ (aaaaaaa vs bbbbbbb)'));
+});
+
+for (const [side, previous, current] of [
+  ['baseline', clean('aaaaaaa1111111', true), clean()],
+  ['current', clean(), clean('aaaaaaa1111111', true)],
+  ['baseline and current', clean('aaaaaaa1111111', true), clean('b', true)],
+] as const) {
+  test(`comparison reports a dirty harness for ${side}`, () => {
+    // When
+    const limitations = harnessLimitations(previous, current);
+
+    // Then
+    assert.equal(limitations.length, 1);
+    assert.ok(limitations[0].includes(`dirty for the ${side} run`));
+  });
+}
+
+for (const [side, previous, current] of [
+  ['baseline', clean(null, null as any), clean()],
+  ['current', clean(), clean('aaaaaaa1111111', null as any)],
+  ['baseline and current', clean(null, null as any), clean(null, null as any)],
+  ['baseline', undefined, clean()],
+  ['current', clean(), undefined],
+  ['baseline and current', undefined, undefined],
+] as const) {
+  test(`comparison reports an unknown harness revision for ${side}`, () => {
+    // When
+    const limitations = harnessLimitations(previous, current);
+
+    // Then
+    assert.equal(limitations.length, 1);
+    assert.ok(limitations[0].includes(`unknown for the ${side} run`));
+  });
+}

@@ -165,7 +165,11 @@ requirement ID, and separately reports pass/fail changes, availability changes,
 and added/removed cases and requirements. With `--case`, other baseline cases are
 excluded rather than reported as removed. Changes to requirement wording, skill
 contents, harness code, or runtime settings can change what is being measured, so
-read the limitations alongside the findings. Only version-2 results are accepted.
+read the limitations alongside the findings. Harness code is compared through the
+recorded `harness_git` state: a limitation is reported when the commits differ,
+when either run had a dirty working tree (the commit then does not identify the
+harness code), or when the revision is unknown or missing (for example, results
+recorded before it existed). Only version-2 results are accepted.
 
 ## Next steps
 

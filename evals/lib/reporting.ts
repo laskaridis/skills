@@ -42,6 +42,48 @@ const direction = (from: unknown, to: unknown) =>
         ? 'regression'
         : 'availability_change';
 
+type HarnessGit = NonNullable<RunResults['harness_git']>;
+
+function harnessSides(
+  previous: HarnessGit | undefined,
+  current: HarnessGit | undefined,
+  predicate: (git: HarnessGit | undefined) => boolean,
+) {
+  const sides = [
+    predicate(previous) ? 'baseline' : '',
+    predicate(current) ? 'current' : '',
+  ].filter(Boolean);
+
+  return sides.join(' and ');
+}
+
+function harnessLimitation(
+  previous: HarnessGit | undefined,
+  current: HarnessGit | undefined,
+) {
+  const unknown = harnessSides(
+    previous,
+    current,
+    (git) => !git || !git.commit || git.dirty === null,
+  );
+
+  if (unknown) {
+    return `Harness revision is unknown for the ${unknown} run; harness changes cannot be ruled out`;
+  }
+
+  const dirty = harnessSides(previous, current, (git) => git!.dirty === true);
+
+  if (dirty) {
+    return `Harness working tree was dirty for the ${dirty} run; the recorded commit does not identify the harness code, so harness changes cannot be ruled out`;
+  }
+
+  if (previous!.commit !== current!.commit) {
+    return `Harness commits differ (${previous!.commit!.slice(0, 7)} vs ${current!.commit!.slice(0, 7)}); changes to execution, evidence or comparison code may affect results`;
+  }
+
+  return undefined;
+}
+
 export function compareResults(
   previousValue: unknown,
   currentValue: unknown,
@@ -60,6 +102,12 @@ export function compareResults(
     if (previous[key] !== current[key]) {
       limitations.push(`${key} differs`);
     }
+  }
+
+  const harness = harnessLimitation(previous.harness_git, current.harness_git);
+
+  if (harness) {
+    limitations.push(harness);
   }
 
   // Results recorded before --agent existed were produced by Codex.
