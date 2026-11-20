@@ -77,8 +77,8 @@ Use it for anything whose correct form can vary in wording.
   Comparisons key on IDs.
 
 The harness verifies that every expected ID appears exactly once in the judge's
-response and that no unexpected IDs appear. The original Markdown and parsed
-checklist are archived.
+response and that no unexpected IDs appear. The checklist is covered by
+`inputs_hash`.
 
 ## Test that a skill asks instead of guessing
 

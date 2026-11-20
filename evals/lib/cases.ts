@@ -1,7 +1,7 @@
 import type { CaseDefinition, Requirement } from './types.ts';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
-import { files, nonempty, sha, snapshot, writeJSON } from './utils.ts';
+import { files, nonempty, sha, snapshot } from './utils.ts';
 
 const identifier = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
 
@@ -234,16 +234,4 @@ export async function createCase(suite: string, caseId: string) {
   }
 
   return target;
-}
-
-export async function archiveChecklists(
-  cases: CaseDefinition[],
-  suite: string,
-) {
-  for (const item of cases) {
-    await writeJSON(
-      path.join(suite, 'cases', item.id, 'expected.parsed.json'),
-      item.requirements,
-    );
-  }
 }

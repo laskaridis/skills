@@ -11,13 +11,13 @@ import * as fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { archiveChecklists, createCase, loadCases } from './lib/cases.ts';
+import { createCase, loadCases } from './lib/cases.ts';
 import { calibrate } from './lib/calibration.ts';
 import { loadJudgeTests, loadDeterministicChecksFor } from './lib/loader.ts';
 import type { Agent } from './lib/agents.ts';
 import { AGENT_NAMES, DEFAULT_AGENT, getAgent } from './lib/agents.ts';
 import { TIMEOUT } from './lib/execution.ts';
-import { copyTree, gitState, sha, snapshot, writeJSON } from './lib/utils.ts';
+import { gitState, sha, snapshot, writeJSON } from './lib/utils.ts';
 import {
   compareResults,
   infrastructureFailure,
@@ -143,48 +143,45 @@ export function argumentsFor(argv: string[]): RunOptions {
   return options;
 }
 
-export interface ArchiveSource {
-  skill: string;
-  skillName: string;
-  suite: string;
-  grading: string;
-  directory: string;
+const SUITE_FILES = ['checks.ts', 'judge-tests.ts', 'run.ts', 'README.md'];
+
+// Hashes the live sources a run depends on, with the same rejection of
+// non-regular files that copying them would apply.
+async function hashTree(
+  root: string,
+  prefix = '',
+): Promise<Record<string, string>> {
+  const hashes: Record<string, string> = {};
+
+  for (const [file, hash] of Object.entries(await snapshot(root))) {
+    if (hash === 'NON_REGULAR_FILE') {
+      throw new Error(`Non-regular input file: ${path.join(root, file)}`);
+    }
+
+    hashes[prefix + file] = hash;
+  }
+
+  return hashes;
 }
 
-export interface ArchivedInputs {
-  skill: string;
-  grading: string;
-  suite: string;
-}
+async function inputsSnapshot(
+  suite: string,
+  grading: string,
+): Promise<Record<string, string>> {
+  const hashes = {
+    ...(await hashTree(grading, 'grading/')),
+    ...(await hashTree(path.join(suite, 'cases'), 'cases/')),
+  };
 
-// Copies everything a run depends on into <directory>/inputs so the run is
-// reproducible from its artifacts alone.
-export async function archiveInputs(
-  source: ArchiveSource,
-): Promise<ArchivedInputs> {
-  const inputs = path.join(source.directory, 'inputs');
-  const archivedEvals = path.join(inputs, 'evals');
-  const archivedSuite = path.join(archivedEvals, 'skills', source.skillName);
-  const archivedSkill = path.join(inputs, 'skill');
-  const archivedGrading = path.join(archivedEvals, 'grading');
-
-  await copyTree(source.skill, archivedSkill);
-  await fs.mkdir(archivedSuite, { recursive: true });
-  await copyTree(source.grading, archivedGrading);
-  await copyTree(
-    path.join(source.suite, 'cases'),
-    path.join(archivedSuite, 'cases'),
-  );
-
-  for (const name of ['checks.ts', 'judge-tests.ts', 'run.ts', 'README.md']) {
+  for (const name of SUITE_FILES) {
     try {
-      const file = path.join(source.suite, name);
+      const file = path.join(suite, name);
 
       if (!(await fs.lstat(file)).isFile()) {
         throw new Error(`Expected ordinary suite file: ${file}`);
       }
 
-      await fs.copyFile(file, path.join(archivedSuite, name));
+      hashes[`suite/${name}`] = sha(await fs.readFile(file));
     } catch (error: any) {
       if (error.code !== 'ENOENT') {
         throw error;
@@ -192,11 +189,7 @@ export async function archiveInputs(
     }
   }
 
-  return {
-    skill: archivedSkill,
-    grading: archivedGrading,
-    suite: archivedSuite,
-  };
+  return hashes;
 }
 
 export interface RunResultsSource {
@@ -204,8 +197,8 @@ export interface RunResultsSource {
   agent: Agent;
   runId: string;
   cliVersion: string;
-  // Archived inputs directory; options.skill must point inside it.
-  inputs: string;
+  // Live suite directory; options.skill and options.grading point at live sources.
+  suite: string;
 }
 
 export async function buildRunResults({
@@ -213,16 +206,12 @@ export async function buildRunResults({
   agent,
   runId,
   cliVersion,
-  inputs,
+  suite,
 }: RunResultsSource): Promise<RunResults> {
-  const skillHash = sha(JSON.stringify(await snapshot(options.skill)));
-  const inputSnapshot = await snapshot(inputs);
-
-  for (const file of Object.keys(inputSnapshot)) {
-    if (file.startsWith('skill/')) {
-      delete inputSnapshot[file];
-    }
-  }
+  const skillHash = sha(JSON.stringify(await hashTree(options.skill)));
+  const inputsHash = sha(
+    JSON.stringify(await inputsSnapshot(suite, options.grading)),
+  );
 
   return {
     format_version: 2,
@@ -230,7 +219,7 @@ export async function buildRunResults({
     run_id: runId,
     selection: { case: options.case ?? null },
     skill_hash: skillHash,
-    inputs_hash: sha(JSON.stringify(inputSnapshot)),
+    inputs_hash: inputsHash,
     harness_git: gitState(REPO),
     settings: {
       agent: agent.name,
@@ -338,24 +327,13 @@ export async function main(
   const runId =
     new Date().toISOString().replace(/[:.]/g, '-') + '-' + process.pid;
   const directory = path.join(suite, 'artifacts', runId);
-  const archived = await archiveInputs({
-    skill: options.skill,
-    skillName: options.skillName,
-    suite,
-    grading: path.join(HERE, 'grading'),
-    directory,
-  });
-  const cases = await loadCases(
-    archived.suite,
-    options.skillName,
-    agent.skillDir,
-  );
 
-  await archiveChecklists(cases, archived.suite);
-  options.skill = archived.skill;
-  options.grading = archived.grading;
-  // Suite modules import ../lib at runtime, so they load from the live suite;
-  // their archived copies are evidence and are covered by inputs_hash.
+  await fs.mkdir(directory, { recursive: true });
+  const cases = await loadCases(suite, options.skillName, agent.skillDir);
+
+  options.grading = path.join(HERE, 'grading');
+  // Everything loads from the live sources; skill_hash and inputs_hash record
+  // which versions this run used.
   options.checkCase = (await loadDeterministicChecksFor(suite))?.checkCase;
   const controls = options.calibrate
     ? await loadJudgeTests(suite, cases)
@@ -365,7 +343,7 @@ export async function main(
     agent,
     runId,
     cliVersion,
-    inputs: path.join(directory, 'inputs'),
+    suite,
   });
 
   const persist = async () => {

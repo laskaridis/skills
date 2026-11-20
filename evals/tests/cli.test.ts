@@ -220,17 +220,11 @@ test('orchestrator runs sorted cases and archives exact inputs without credentia
   assert.ok(result!.results.skill_hash);
   assert.equal(saved.cases.length, 2);
 
-  await fs.access(path.join(result!.directory, 'inputs/skill/SKILL.md'));
+  assert.ok(saved.skill_hash);
+  assert.ok(saved.inputs_hash);
+  assert.ok(saved.harness_git);
 
-  assert.ok(result!.results.harness_git);
-
-  await assert.rejects(
-    fs.access(path.join(result!.directory, 'inputs/evals/lib')),
-  );
-
-  await assert.rejects(
-    fs.access(path.join(result!.directory, 'inputs/auth.json')),
-  );
+  await assert.rejects(fs.access(path.join(result!.directory, 'inputs')));
 });
 
 test('orchestrator compares baseline and single selection still calibrates all controls', async (t) => {

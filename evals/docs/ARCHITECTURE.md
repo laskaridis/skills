@@ -15,11 +15,11 @@ run per case is exploratory.
   optional judge controls.
 - **Validate before spending.** Everything that can be checked without a model
   is checked first (preflight), so a typo fails in seconds, not after minutes of model calls.
-- **Traceable runs.** Skill, cases, grading inputs, and suite-hook source files
-  are archived with hashes. Cases and grading inputs are loaded from the archive,
-  but `checks.ts` and `judge-tests.ts` execute from the live suite checkout;
-  harness code is recorded by Git state rather than copied. This supports audit
-  and comparison, but the archive alone cannot reproduce the complete execution.
+- **Traceable runs.** Skill, cases, grading inputs, suite hooks, and harness
+  code all run from the live checkout; nothing is snapshotted. `results.json`
+  records `skill_hash`, `inputs_hash` (grading, cases, suite files), and the
+  harness Git state, so comparability can be judged, but a run cannot be
+  replayed from its artifacts and is not isolated from mid-run edits.
 - **Provider-specific isolation.** Agent and judge use separate workspaces.
   Codex uses a temporary `CODEX_HOME`, workspace-write agent sandbox, and
   read-only judge sandbox. Claude uses a temporary config directory only when
@@ -50,8 +50,7 @@ CLI args
  [1] Preflight          see preflight.ts
   │
   ▼
- [2] Archive inputs     artifacts/<runId>/inputs/{skill, evals/…}
-  │                    reload cases from archive · hashes · provider-specific runtime
+ [2] Hash inputs        load cases from the live suite · skill/inputs hashes · provider-specific runtime
   ▼
  [3] For each case (sequential)
   │
@@ -76,8 +75,7 @@ CLI args
 
 `results.json` and `report.md` are rewritten after every case, so an
 interrupted run still leaves partial results. Suite checks and calibration
-controls run from the live checkout even though their source files are also
-archived; rerunning from the archive alone does not reproduce those hooks.
+controls run from the live checkout; the run folder holds no copy of them.
 
 ## Evaluation suite folder: `evals/skills/<skill>/`
 
@@ -114,7 +112,6 @@ Everything is under `evals/skills/<skill>/artifacts/<runId>/`.
 
 ```
 results.json  report.md
-inputs/                    archived skill, grading, cases, suite hooks and parsed checklists
 <case>/
   result.json
   workspace*

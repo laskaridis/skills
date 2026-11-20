@@ -122,7 +122,6 @@ Artifacts are Git-ignored:
 skills/<skill>/artifacts/<run-id>/
   report.md                 # Findings and evidence links
   results.json              # Format-version-2 results for tools/comparison
-  inputs/                   # Archived skill, cases, grading, and suite-hook source (harness code is not copied)
   <case>/
     result.json
     workspace/              # Final files
@@ -137,10 +136,11 @@ Invocation directories keep `prompt.txt`, `trace.jsonl`,
 `bundle.json`, the rubric, schema, and `finding.json`. Start with `final.txt`
 for a response, `bundle.json` for what the judge saw, and `stderr.txt` for
 failures. Results also retain requested and observed settings, input hashes, and
-raw usage. Archived suite-hook sources are evidence, but checks and calibration
-controls execute from the live checkout. Harness code is identified by Git
-state rather than archived, so the artifacts alone do not provide a fully
-replayable run.
+raw usage. Runs read the skill, cases, grading inputs, and suite hooks from the
+live checkout; nothing is copied into the run folder. `skill_hash`,
+`inputs_hash`, and `harness_git` identify the versions used, so they show
+whether two runs are comparable, but the artifacts alone do not replay a run.
+Editing the skill or cases while a run is in progress affects that run.
 
 ## Compare a change with a baseline
 

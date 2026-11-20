@@ -9,7 +9,7 @@ import type {
   RunOptions,
   RunResults,
 } from '../lib/types.ts';
-import { archiveInputs, buildRunResults, runSuite } from '../run.ts';
+import { buildRunResults, runSuite } from '../run.ts';
 import { getAgent } from '../lib/agents.ts';
 import { temporary, put, fixture, fakeTransport } from './helpers.ts';
 
@@ -36,86 +36,35 @@ async function suiteOnDisk(t: import('vitest').TestContext) {
   };
 }
 
-test('archiveInputs copies skill, grading, cases and suite files into the run directory', async (t) => {
-  // Given
-  const { source } = await suiteOnDisk(t);
-
-  // When
-  const archived = await archiveInputs(source);
-
-  // Then
-  assert.equal(archived.skill, path.join(source.directory, 'inputs/skill'));
-  assert.equal(
-    archived.grading,
-    path.join(source.directory, 'inputs/evals/grading'),
-  );
-  assert.equal(
-    archived.suite,
-    path.join(source.directory, 'inputs/evals/skills/synthetic'),
-  );
-
-  for (const file of [
-    path.join(archived.skill, 'SKILL.md'),
-    path.join(archived.grading, 'rubric.md'),
-    path.join(archived.suite, 'cases/a-first/prompt.md'),
-    path.join(archived.suite, 'checks.ts'),
-    path.join(archived.suite, 'README.md'),
-  ]) {
-    await fs.access(file);
-  }
-
-  await assert.rejects(fs.access(path.join(archived.suite, 'judge-tests.ts')));
-});
-
-test('archiveInputs rejects suite files that are not ordinary files', async (t) => {
-  // Given
-  const { source, suite, root } = await suiteOnDisk(t);
-
-  await fs.rm(path.join(suite, 'README.md'));
-  await put(root, 'elsewhere.md', 'Outside');
-  await fs.symlink(
-    path.join(root, 'elsewhere.md'),
-    path.join(suite, 'README.md'),
-  );
-
-  // When
-  const act = archiveInputs(source);
-
-  // Then
-  await assert.rejects(act, /Expected ordinary suite file/);
-});
-
-async function archivedRun(t: import('vitest').TestContext) {
+async function liveRun(t: import('vitest').TestContext) {
   const disk = await suiteOnDisk(t);
-  const archived = await archiveInputs(disk.source);
   const { options } = await fixture(t);
-  const inputs = path.join(disk.source.directory, 'inputs');
   const runOptions: RunOptions = {
     ...options,
     skillName: 'synthetic',
-    skill: archived.skill,
-    grading: archived.grading,
+    skill: path.join(disk.root, 'skill'),
+    grading: path.join(disk.root, 'grading'),
     model: 'model-x',
     judgeModel: 'judge-x',
     case: 'a-first',
   };
 
   return {
-    archived,
+    ...disk,
     build: () =>
       buildRunResults({
         options: runOptions,
         agent: getAgent('codex'),
         runId: 'run-1',
         cliVersion: 'cli-1',
-        inputs,
+        suite: disk.suite,
       }),
   };
 }
 
 test('buildRunResults records identity, selection and settings of the run', async (t) => {
   // Given
-  const { build } = await archivedRun(t);
+  const { build } = await liveRun(t);
 
   // When
   const results = await build();
@@ -133,17 +82,17 @@ test('buildRunResults records identity, selection and settings of the run', asyn
   assert.equal(results.settings.runs_per_case, 1);
 });
 
-test('buildRunResults hashes the skill apart from the other archived inputs', async (t) => {
+test('buildRunResults hashes the skill apart from the other inputs', async (t) => {
   // Given
-  const { build, archived } = await archivedRun(t);
+  const { build, root, suite } = await liveRun(t);
   const before = await build();
 
   // When
-  await put(archived.skill, 'SKILL.md', '# Changed skill');
+  await put(root, 'skill/SKILL.md', '# Changed skill');
 
   const afterSkillChange = await build();
 
-  await put(archived.suite, 'cases/a-first/prompt.md', 'Changed prompt');
+  await put(suite, 'cases/a-first/prompt.md', 'Changed prompt');
 
   const afterCaseChange = await build();
 
@@ -151,6 +100,81 @@ test('buildRunResults hashes the skill apart from the other archived inputs', as
   assert.notEqual(afterSkillChange.skill_hash, before.skill_hash);
   assert.equal(afterSkillChange.inputs_hash, before.inputs_hash);
   assert.notEqual(afterCaseChange.inputs_hash, afterSkillChange.inputs_hash);
+  assert.equal(afterCaseChange.skill_hash, afterSkillChange.skill_hash);
+});
+
+test('buildRunResults is stable and reflects grading and suite file changes', async (t) => {
+  // Given
+  const { build, root, suite } = await liveRun(t);
+  const before = await build();
+  const again = await build();
+
+  // When
+  await put(root, 'grading/rubric.md', 'Changed rubric');
+
+  const afterGradingChange = await build();
+
+  await put(suite, 'checks.ts', 'export const checkCase = () => 1;');
+
+  const afterChecksChange = await build();
+
+  // Then
+  assert.equal(again.inputs_hash, before.inputs_hash);
+  assert.equal(again.skill_hash, before.skill_hash);
+  assert.notEqual(afterGradingChange.inputs_hash, before.inputs_hash);
+  assert.notEqual(
+    afterChecksChange.inputs_hash,
+    afterGradingChange.inputs_hash,
+  );
+});
+
+test('buildRunResults ignores run artifacts stored in the suite', async (t) => {
+  // Given
+  const { build, suite } = await liveRun(t);
+  const before = await build();
+
+  // When
+  await put(suite, 'artifacts/old-run/results.json', '{}');
+
+  const after = await build();
+
+  // Then
+  assert.equal(after.inputs_hash, before.inputs_hash);
+});
+
+test('buildRunResults rejects suite files that are not ordinary files', async (t) => {
+  // Given
+  const { build, suite, root } = await liveRun(t);
+
+  await fs.rm(path.join(suite, 'README.md'));
+  await put(root, 'elsewhere.md', 'Outside');
+  await fs.symlink(
+    path.join(root, 'elsewhere.md'),
+    path.join(suite, 'README.md'),
+  );
+
+  // When
+  const act = build();
+
+  // Then
+  await assert.rejects(act, /Expected ordinary suite file/);
+});
+
+test('buildRunResults rejects non-regular files in the inputs it hashes', async (t) => {
+  // Given
+  const { build, suite, root } = await liveRun(t);
+
+  await put(root, 'elsewhere.md', 'Outside');
+  await fs.symlink(
+    path.join(root, 'elsewhere.md'),
+    path.join(suite, 'cases/a-first/link.md'),
+  );
+
+  // When
+  const act = build();
+
+  // Then
+  await assert.rejects(act, /Non-regular input file/);
 });
 
 async function suiteRun(

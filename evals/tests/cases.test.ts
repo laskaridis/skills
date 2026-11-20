@@ -3,13 +3,7 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { temporary, put } from './helpers.ts';
-import {
-  parseChecklist,
-  loadCases,
-  archiveChecklists,
-  createCase,
-} from '../lib/cases.ts';
-import { readJSON } from '../lib/utils.ts';
+import { parseChecklist, loadCases, createCase } from '../lib/cases.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs/promises')>()),
@@ -64,7 +58,7 @@ async function suite(t: import('vitest').TestContext) {
   return root;
 }
 
-test('case discovery sorts, omits packaging markers, handles empty inputs and archives original requirements', async (t) => {
+test('case discovery sorts, omits packaging markers, and handles empty inputs', async (t) => {
   // Given
   const root = await suite(t);
   const initial = await loadCases(root, 'skill');
@@ -73,11 +67,6 @@ test('case discovery sorts, omits packaging markers, handles empty inputs and ar
 
   // When
   const cases = await loadCases(root, 'skill');
-
-  await archiveChecklists(cases, root);
-  const expected = await readJSON(
-    path.join(root, 'cases/z-last/expected.parsed.json'),
-  );
 
   await put(root, 'cases/a-first/fixtures/new.md', 'Changed');
   const changed = await loadCases(root, 'skill');
@@ -88,7 +77,6 @@ test('case discovery sorts, omits packaging markers, handles empty inputs and ar
     ['a-first', 'z-last'],
   );
   assert.deepEqual(initial[0].fixtureFiles, []);
-  assert.deepEqual(expected, cases[1].requirements);
   assert.notEqual(changed[0].inputHash, cases[0].inputHash);
 });
 
