@@ -170,11 +170,7 @@ function statuses(...failing: string[]): Control['expected'] {
   );
 }
 
-function control(
-  id: string,
-  generated: string,
-  ...failing: string[]
-): Control {
+function control(id: string, generated: string, ...failing: string[]): Control {
   return {
     id,
     caseId: 'complete',
