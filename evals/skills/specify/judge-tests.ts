@@ -162,7 +162,12 @@ function makeDefectiveSpec(): string {
   );
 
   // Drop the implicit signed-in-session assumption.
-  return between(spec, '## Assumptions', '## Out of Scope', '## Assumptions\n\nNone.\n\n');
+  return between(
+    spec,
+    '## Assumptions',
+    '## Out of Scope',
+    '## Assumptions\n\nNone.\n\n',
+  );
 }
 
 const ids = [
