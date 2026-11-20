@@ -127,8 +127,6 @@ export async function runCase(
 
     gitInit(workspace);
     initial = await snapshot(workspace);
-    await writeJSON(path.join(directory, 'initial-snapshot.json'), initial);
-    await archiveWorkspace(workspace, directory, 'initial-workspace');
     const inputFiles = await workspaceContents(
       workspace,
       options.skillName,

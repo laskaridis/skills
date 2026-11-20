@@ -311,7 +311,7 @@ export function report(results: RunResults) {
       '',
       `## ${item.case}`,
       '',
-      `[Initial snapshot](${item.case}/initial-snapshot.json) · [Final workspace](${item.case}/workspace.manifest.json) · [Agent response](${item.case}/agent/final.txt)`,
+      `[Final workspace](${item.case}/workspace.manifest.json) · [Agent response](${item.case}/agent/final.txt)`,
     );
 
     for (const call of item.execution.calls) {

@@ -117,7 +117,7 @@ results.json  report.md
 inputs/                    archived skill, grading, cases, suite hooks and parsed checklists
 <case>/
   result.json
-  initial-snapshot.json, initial-workspace*, workspace*
+  workspace*
   agent/         prompt.txt command.json trace.jsonl stderr.txt final.txt execution.json
   judge-quality/   bundle.json rubric.md schema.json + run files
 calibration/<control>/

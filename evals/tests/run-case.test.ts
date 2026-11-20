@@ -168,6 +168,25 @@ for (const value of [
   });
 }
 
+test('case folder does not contain initial snapshot or initial workspace', async (t) => {
+  // Given
+  const { root, options, item } = await fixture(t);
+  const directory = path.join(root, item.id);
+
+  // When
+  await runCase({ ...options, transport: fakeTransport() }, root, root, item);
+
+  // Then
+  await assert.rejects(
+    fs.access(path.join(directory, 'initial-snapshot.json')),
+  );
+  await assert.rejects(fs.access(path.join(directory, 'initial-workspace')));
+  await assert.rejects(
+    fs.access(path.join(directory, 'initial-workspace.manifest.json')),
+  );
+  await assert.doesNotReject(fs.access(path.join(directory, 'workspace')));
+});
+
 test('setup failure archives workspace and does not run validator without initial snapshot', async (t) => {
   // Given
   const { root, options, item } = await fixture(t);

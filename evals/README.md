@@ -125,8 +125,6 @@ skills/<skill>/artifacts/<run-id>/
   inputs/                   # Archived skill, cases, grading, and suite-hook source (harness code is not copied)
   <case>/
     result.json
-    initial-snapshot.json   # File hashes before execution
-    initial-workspace/      # Files before execution
     workspace/              # Final files
     *.manifest.json         # Archived hashes and link metadata (symlinks recorded, not followed)
     agent/                  # Agent invocation evidence

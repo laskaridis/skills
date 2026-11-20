@@ -279,6 +279,19 @@ test('reports include relevant evidence links and escape comparison cells', () =
   }
 });
 
+test('reports do not link an initial snapshot', () => {
+  // Given
+  const value = run();
+
+  // When
+  const text = report(value);
+
+  // Then
+  assert.ok(!text.includes('Initial snapshot'));
+  assert.ok(!text.includes('initial-snapshot.json'));
+  assert.ok(text.includes('Final workspace'));
+});
+
 test('reports omit judge links when the judge was not run', () => {
   // Given
   const value = run();
