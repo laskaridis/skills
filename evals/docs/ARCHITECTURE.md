@@ -113,7 +113,7 @@ evals/skills/<skill>/
 Everything is under `evals/skills/<skill>/artifacts/<runId>/`.
 
 ```
-results.json  report.md  baseline.json
+results.json  report.md
 inputs/                    archived skill, grading, cases, suite hooks and parsed checklists
 <case>/
   result.json

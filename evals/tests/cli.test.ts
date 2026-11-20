@@ -275,7 +275,15 @@ test('orchestrator compares baseline and single selection still calibrates all c
   assert.deepEqual(result!.results.comparison!.excluded_cases, [
     'synthetic/z-last',
   ]);
-  await fs.access(path.join(result!.directory, 'baseline.json'));
+
+  assert.ok(result!.results.comparison);
+
+  await assert.rejects(
+    fs.access(path.join(result!.directory, 'baseline.json')),
+    {
+      code: 'ENOENT',
+    },
+  );
 });
 
 test('calibration without module is unavailable and infrastructure failures set exit 2', async (t) => {

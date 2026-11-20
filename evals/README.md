@@ -122,7 +122,6 @@ Artifacts are Git-ignored:
 skills/<skill>/artifacts/<run-id>/
   report.md                 # Findings and evidence links
   results.json              # Format-version-2 results for tools/comparison
-  baseline.json             # Copied baseline, with --compare
   inputs/                   # Archived skill, cases, grading, and suite-hook source (harness code is not copied)
   <case>/
     result.json

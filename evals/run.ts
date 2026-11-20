@@ -379,10 +379,6 @@ export async function main(
     await fs.writeFile(path.join(directory, 'report.md'), report(results));
   };
 
-  if (previous) {
-    await writeJSON(path.join(directory, 'baseline.json'), previous);
-  }
-
   const runtime = await fs.mkdtemp(
     path.join(os.tmpdir(), 'skill-eval-runtime-'),
   );
