@@ -1,6 +1,8 @@
 #!/usr/bin/env -S node --experimental-strip-types
 import type {
   AgentName,
+  CaseDefinition,
+  Control,
   RunOptions,
   RunResults,
   Transport,
@@ -12,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { archiveChecklists, createCase, loadCases } from './lib/cases.ts';
 import { calibrate } from './lib/calibration.ts';
 import { loadJudgeTests, loadDeterministicChecksFor } from './lib/loader.ts';
+import type { Agent } from './lib/agents.ts';
 import { AGENT_NAMES, DEFAULT_AGENT, getAgent } from './lib/agents.ts';
 import { TIMEOUT } from './lib/execution.ts';
 import { copyTree, gitState, sha, snapshot, writeJSON } from './lib/utils.ts';
@@ -140,6 +143,163 @@ export function argumentsFor(argv: string[]): RunOptions {
   return options;
 }
 
+export interface ArchiveSource {
+  skill: string;
+  skillName: string;
+  suite: string;
+  grading: string;
+  directory: string;
+}
+
+export interface ArchivedInputs {
+  skill: string;
+  grading: string;
+  suite: string;
+}
+
+// Copies everything a run depends on into <directory>/inputs so the run is
+// reproducible from its artifacts alone.
+export async function archiveInputs(
+  source: ArchiveSource,
+): Promise<ArchivedInputs> {
+  const inputs = path.join(source.directory, 'inputs');
+  const archivedEvals = path.join(inputs, 'evals');
+  const archivedSuite = path.join(archivedEvals, 'skills', source.skillName);
+  const archivedSkill = path.join(inputs, 'skill');
+  const archivedGrading = path.join(archivedEvals, 'grading');
+
+  await copyTree(source.skill, archivedSkill);
+  await fs.mkdir(archivedSuite, { recursive: true });
+  await copyTree(source.grading, archivedGrading);
+  await copyTree(
+    path.join(source.suite, 'cases'),
+    path.join(archivedSuite, 'cases'),
+  );
+
+  for (const name of ['checks.ts', 'judge-tests.ts', 'run.ts', 'README.md']) {
+    try {
+      const file = path.join(source.suite, name);
+
+      if (!(await fs.lstat(file)).isFile()) {
+        throw new Error(`Expected ordinary suite file: ${file}`);
+      }
+
+      await fs.copyFile(file, path.join(archivedSuite, name));
+    } catch (error: any) {
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  }
+
+  return {
+    skill: archivedSkill,
+    grading: archivedGrading,
+    suite: archivedSuite,
+  };
+}
+
+export interface RunResultsSource {
+  options: RunOptions;
+  agent: Agent;
+  runId: string;
+  cliVersion: string;
+  // Archived inputs directory; options.skill must point inside it.
+  inputs: string;
+}
+
+export async function buildRunResults({
+  options,
+  agent,
+  runId,
+  cliVersion,
+  inputs,
+}: RunResultsSource): Promise<RunResults> {
+  const skillHash = sha(JSON.stringify(await snapshot(options.skill)));
+  const inputSnapshot = await snapshot(inputs);
+
+  for (const file of Object.keys(inputSnapshot)) {
+    if (file.startsWith('skill/')) {
+      delete inputSnapshot[file];
+    }
+  }
+
+  return {
+    format_version: 2,
+    skill: options.skillName,
+    run_id: runId,
+    selection: { case: options.case ?? null },
+    skill_hash: skillHash,
+    inputs_hash: sha(JSON.stringify(inputSnapshot)),
+    harness_git: gitState(REPO),
+    settings: {
+      agent: agent.name,
+      model: options.model,
+      judge_model: options.judgeModel,
+      reasoning: options.reasoning,
+      judge_reasoning: options.judgeReasoning,
+      cli_version: cliVersion,
+      node_version: process.version,
+      platform: `${process.platform}/${process.arch}`,
+      timeout_ms: TIMEOUT,
+      ...agent.settings(),
+      runs_per_case: 1,
+    },
+    cases: [],
+  };
+}
+
+export interface SuiteRun {
+  // options.signal cancels the run: no new case or calibration starts after it.
+  options: RunOptions;
+  runtime: string;
+  directory: string;
+  cases: CaseDefinition[];
+  controls: Control[] | null;
+  results: RunResults;
+  persist: () => Promise<void>;
+}
+
+// Runs the selected cases (then calibration) into `results`. Never touches
+// `process`: signals and exit codes belong to the caller.
+export async function runSuite({
+  options,
+  runtime,
+  directory,
+  cases,
+  controls,
+  results,
+  persist,
+}: SuiteRun): Promise<void> {
+  const cancelled = () => options.signal?.aborted ?? false;
+
+  for (const item of cases.filter(
+    (c) => !options.case || c.id === options.case,
+  )) {
+    if (cancelled()) {
+      break;
+    }
+
+    const result = await busy(item.id, () =>
+      runCase(options, runtime, directory, item),
+    );
+
+    results.cases.push(result);
+    printCase(result);
+    await persist();
+  }
+
+  if (options.calibrate && !cancelled()) {
+    results.calibration = await busy('calibration', () =>
+      calibrate(options, runtime, directory, cases, controls),
+    );
+    printCalibration(results.calibration);
+  }
+
+  results.cancelled = cancelled() || undefined;
+  await persist();
+}
+
 export async function main(
   argv = process.argv.slice(2),
   {
@@ -178,82 +338,35 @@ export async function main(
   const runId =
     new Date().toISOString().replace(/[:.]/g, '-') + '-' + process.pid;
   const directory = path.join(suite, 'artifacts', runId);
-  const inputs = path.join(directory, 'inputs');
-  const archivedEvals = path.join(inputs, 'evals');
-  const archivedSuite = path.join(archivedEvals, 'skills', options.skillName);
-
-  await copyTree(options.skill, path.join(inputs, 'skill'));
-  await fs.mkdir(archivedSuite, { recursive: true });
-
-  await copyTree(
-    path.join(HERE, 'grading'),
-    path.join(archivedEvals, 'grading'),
-  );
-  await copyTree(path.join(suite, 'cases'), path.join(archivedSuite, 'cases'));
-
-  for (const name of ['checks.ts', 'judge-tests.ts', 'run.ts', 'README.md']) {
-    try {
-      const source = path.join(suite, name);
-
-      if (!(await fs.lstat(source)).isFile()) {
-        throw new Error(`Expected ordinary suite file: ${source}`);
-      }
-
-      await fs.copyFile(source, path.join(archivedSuite, name));
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
-        throw error;
-      }
-    }
-  }
-
+  const archived = await archiveInputs({
+    skill: options.skill,
+    skillName: options.skillName,
+    suite,
+    grading: path.join(HERE, 'grading'),
+    directory,
+  });
   const cases = await loadCases(
-    archivedSuite,
+    archived.suite,
     options.skillName,
     agent.skillDir,
   );
 
-  await archiveChecklists(cases, archivedSuite);
-  options.skill = path.join(inputs, 'skill');
-  options.grading = path.join(archivedEvals, 'grading');
+  await archiveChecklists(cases, archived.suite);
+  options.skill = archived.skill;
+  options.grading = archived.grading;
   // Suite modules import ../lib at runtime, so they load from the live suite;
   // their archived copies are evidence and are covered by inputs_hash.
   options.checkCase = (await loadDeterministicChecksFor(suite))?.checkCase;
   const controls = options.calibrate
     ? await loadJudgeTests(suite, cases)
     : null;
-  const skillHash = sha(JSON.stringify(await snapshot(options.skill)));
-  const inputSnapshot = await snapshot(inputs);
-
-  for (const file of Object.keys(inputSnapshot)) {
-    if (file.startsWith('skill/')) {
-      delete inputSnapshot[file];
-    }
-  }
-
-  const results: RunResults = {
-    format_version: 2,
-    skill: options.skillName,
-    run_id: runId,
-    selection: { case: options.case ?? null },
-    skill_hash: skillHash,
-    inputs_hash: sha(JSON.stringify(inputSnapshot)),
-    harness_git: gitState(REPO),
-    settings: {
-      agent: agent.name,
-      model: options.model,
-      judge_model: options.judgeModel,
-      reasoning: options.reasoning,
-      judge_reasoning: options.judgeReasoning,
-      cli_version: cliVersion,
-      node_version: process.version,
-      platform: `${process.platform}/${process.arch}`,
-      timeout_ms: TIMEOUT,
-      ...agent.settings(),
-      runs_per_case: 1,
-    },
-    cases: [],
-  };
+  const results = await buildRunResults({
+    options,
+    agent,
+    runId,
+    cliVersion,
+    inputs: path.join(directory, 'inputs'),
+  });
 
   const persist = async () => {
     results.observed_settings = observedSettings(results);
@@ -287,31 +400,15 @@ export async function main(
     printHeader(results, directory);
     await persist();
 
-    for (const item of cases.filter(
-      (c) => !options.case || c.id === options.case,
-    )) {
-      if (cancellation.signal.aborted) {
-        break;
-      }
-
-      const result = await busy(item.id, () =>
-        runCase(options, runtime, directory, item),
-      );
-
-      results.cases.push(result);
-      printCase(result);
-      await persist();
-    }
-
-    if (options.calibrate && !cancellation.signal.aborted) {
-      results.calibration = await busy('calibration', () =>
-        calibrate(options, runtime, directory, cases, controls),
-      );
-      printCalibration(results.calibration);
-    }
-
-    results.cancelled = cancellation.signal.aborted || undefined;
-    await persist();
+    await runSuite({
+      options,
+      runtime,
+      directory,
+      cases,
+      controls,
+      results,
+      persist,
+    });
 
     printSummary(results, directory, Date.now() - started);
 
