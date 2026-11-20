@@ -124,11 +124,16 @@ For the storage layer, create an availability summary table for future display w
       'A first-time full request is automatically queued on a waitlist.',
     ),
     '- Automatic waitlisting or queuing when workshops are full.',
-    '- Automatic waitlisting is part of this feature.',
-  ).replace(
-    '- **AC-006:** Given a workshop not yet started with zero remaining seats and a member without an active reservation, when that member tries to reserve, then the result is "Fully booked", with no change to reservations or remaining seats.',
-    '- **AC-006:** Given a full workshop and an unreserved member, when the member tries to reserve, then the member is placed on the waitlist.',
-  ),
+    '',
+  )
+    .replace(
+      '- **AC-006:** Given a workshop not yet started with zero remaining seats and a member without an active reservation, when that member tries to reserve, then the result is "Fully booked", with no change to reservations or remaining seats.',
+      '- **AC-006:** Given a full workshop and an unreserved member, when the member tries to reserve, then the member is placed on the waitlist.',
+    )
+    .replace(
+      '- **AC-007:** Given a workshop not yet started with exactly one seat left, when two different unreserved members request that last seat concurrently, then exactly one becomes "Reserved", the other receives "Fully booked", exactly one seat is consumed, and remaining seats never goes below zero.',
+      '- **AC-007:** Given a workshop with one remaining seat, when two different unreserved members request it concurrently, then exactly one becomes "Reserved", the other is placed on the waitlist, exactly one seat is consumed, and remaining seats never goes below zero.',
+    ),
   invented_email: replaceOnce(
     goldenSpec,
     '## Assumptions',
@@ -183,8 +188,27 @@ export const controls: Control[] = [
   control('correct-spec', specimens.complete),
   control('missing-story', specimens.omitted_cancellation, 'completeness'),
   control('vague-acceptance', specimens.vague_criteria, 'verifiable_stories'),
-  control('horizontal-story', specimens.horizontal_story, 'completeness', 'vertical_stories'),
-  control('obsolete-waitlist', specimens.obsolete_waitlist, 'completeness', 'superseded_decisions'),
-  control('invented-emails', specimens.invented_email, 'completeness', 'out_of_scope'),
-  control('uncaptured-assumption', specimens.missing_assumption, 'captured_assumptions'),
+  control(
+    'horizontal-story',
+    specimens.horizontal_story,
+    'completeness',
+    'vertical_stories',
+  ),
+  control(
+    'obsolete-waitlist',
+    specimens.obsolete_waitlist,
+    'completeness',
+    'superseded_decisions',
+  ),
+  control(
+    'invented-emails',
+    specimens.invented_email,
+    'completeness',
+    'out_of_scope',
+  ),
+  control(
+    'uncaptured-assumption',
+    specimens.missing_assumption,
+    'captured_assumptions',
+  ),
 ];
