@@ -56,14 +56,14 @@ CLI args
  [3] For each case (sequential)
   │
   │   workspace = temp dir
-  │     ├─ .agents/skills/<name>/   (copy of the skill)
+  │     ├─ .agents/skills/<name>/   (copy of the skill; .claude/skills/ for claude)
   │     └─ fixtures/*                (git init, snapshot)
   │
   │   Agent            prompt = "$skill …" + prompt.md          (workspace-write)
   │        ▼
   │   Deterministic checks (optional)
   │        ▼
-  │   Quality judge    bundle.json + rubric.md + schema.json     (provider-specific restrictions)
+  │   Quality judge (optional) bundle.json + rubric.md + schema.json     (provider-specific restrictions)
   │        ▼
   │   result.json, workspace archive, delete temp workspace
   │
@@ -79,28 +79,6 @@ interrupted run still leaves partial results. Suite checks and calibration
 controls run from the live checkout even though their source files are also
 archived; rerunning from the archive alone does not reproduce those hooks.
 
-### Prompts
-
-- **Agent:** `$<skill>\nUse the selected local .agents/skills/<skill>/SKILL.md skill explicitly.\n\n<prompt.md>`
-- **Judge:** a fixed instruction to read `rubric.md`, `schema.json` and
-  `bundle.json` and return only JSON. The evidence is in `bundle.json`:
-  `input_files`, `prompt`, `final_response`,
-  `workspace_files`, `deterministic_checks` and `requirements`.
-
-### Case statuses
-
-Each `CaseResult` has independent channels:
-
-| Channel          | Values                                                 |
-| ---------------- | ------------------------------------------------------ |
-| `execution`      | `ok`, `timeout`, `execution_error`, `not_run`          |
-| `checks`         | `pass`, `fail`, `error`, `not_run`                     |
-| `judge`          | `ok`, `invalid_response`, `execution_error`, `not_run` |
-| `requirements[]` | `pass`, `fail`, `ungradable` (with evidence)           |
-
-If the agent or judge fails, requirements are marked `ungradable`, not `fail`,
-so a judge failure is never counted as a quality failure.
-
 ## Evaluation suite folder: `evals/<skill>/`
 
 A suite is named after the skill it evaluates (example `evals/plan/` for `skills/plan/`). The harness discovers everything by convention. Every evaluation suite needs at least one case defined as `cases/<id>/` and the following files included for each case: `prompt.md`, `expected.md` and `fixtures/`.
@@ -112,10 +90,10 @@ evals/<skill>/
     prompt.md            Required: The user request sent to the skill.
     expected.md          Required: Requirements the quality judge grades.
     fixtures/            Required: Files the agent starts with, copied into a temp git repo.
-  checks.ts              Optional: deterministic checks on output files and inputs.
-  judge-tests.ts         Optional: good and bad controls for `--calibrate`.
+  checks.ts              Optional: Deterministic checks
+  judge-tests.ts         Optional: Checks for the asserting judge effectiveness (enabled using "--calibrate").
   run.ts                 Optional: wrapper for `pnpm eval:<skill>`.
-  artifacts/<runId>/     Evaluation outputs (not committed in git history).
+  artifacts/<runId>/     Evaluation outputs.
 ```
 
 | Artifact             | Purpose and conventions                                                                                                                                                                                                                                                                                                           |
@@ -148,3 +126,18 @@ calibration/<control>/
 `results.json` records `skill_hash`, `inputs_hash`, the requested
 settings and the settings observed by the CLI. `--compare` uses these to report
 which differences limit the comparison.
+
+### Case statuses
+
+Each `CaseResult` has independent channels:
+
+| Channel          | Values                                                            |
+| ---------------- | ----------------------------------------------------------------- |
+| `execution`      | `ok`, `timeout`, `execution_error`, `not_run`                     |
+| `checks`         | `pass`, `fail`, `error`, `not_run`                                |
+| `judge`          | `ok`, `invalid_response`, `timeout`, `execution_error`, `not_run` |
+| `requirements[]` | `pass`, `fail`, `ungradable` (with evidence)                      |
+
+If the agent or judge fails, requirements are marked `ungradable`, not `fail`,
+so a judge failure is never counted as a quality failure.
+
