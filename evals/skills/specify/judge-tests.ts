@@ -1,9 +1,8 @@
 import type { Control } from '../../lib/types.ts';
 import { SPEC } from './checks.ts';
 
-// A fully conforming document is essential for testing judge false negatives.
-// Defective variants change one category at a time where possible, so a
-// calibration disagreement points to a concrete blind spot.
+// Calibration checks both judge false negatives and false positives.
+// The negative specimen combines all six defects to minimize model calls.
 export const goldenSpec = `# Feature Specification: Workshop RSVP
 
 ## Purpose / Big Picture
@@ -87,73 +86,84 @@ function between(
   return value.slice(0, start) + replacement + value.slice(finish);
 }
 
-export const specimens = {
-  complete: goldenSpec,
-  omitted_cancellation: between(
-    goldenSpec,
-    '### US-003: Cancel and later rebook my seat',
-    '## Assumptions',
-    '',
-  ),
-  vague_criteria: between(
-    goldenSpec,
-    '- **AC-004:**',
-    '### US-003: Cancel and later rebook my seat',
-    '- **AC-004:** When a member attempts to reserve, then the system handles their request correctly.\n\n',
-  ),
-  horizontal_story: between(
-    goldenSpec,
+function makeDefectiveSpec(): string {
+  let spec = goldenSpec;
+
+  // A storage-only story is not a vertical slice.
+  spec = between(
+    spec,
     '### US-001: See available seats and my reservation',
     '### US-002: Reserve one available seat',
-    `### US-001: Add availability storage
+    [
+      '### US-001: Add availability storage',
+      '',
+      'Build a database table for remaining-seat summaries. This story delivers only',
+      'storage changes, not a usable workshop detail page.',
+      '',
+      '#### Acceptance criteria',
+      '',
+      '- **AC-001:** Given capacity 3 and one active reservation, when the stored summary is queried, then it returns 2.',
+      '',
+    ].join('\n'),
+  );
 
-For the storage layer, create an availability summary table for future display work. This story delivers only schema and storage changes, not a usable workshop detail page.
+  // A vague acceptance criterion makes the reservation story unverifiable.
+  spec = replaceOnce(
+    spec,
+    '- **AC-004:** Given a workshop not yet started with capacity 3 and one active reservation, when another member reserves a seat, then their status becomes "Reserved", one active reservation is added, and remaining seats becomes 1.',
+    '- **AC-004:** When a member reserves, then the system handles the request correctly.',
+  );
 
-#### Acceptance criteria
-
-- **AC-001:** Given capacity 3 and one active reservation, when a stored summary is queried, then its remaining count is 2.
-- **AC-002:** Given a stored reservation is marked cancelled, when the summary is recomputed, then the cancelled reservation is not included.
-- **AC-003:** Given a workshop whose start has passed, when the summary is queried, then it still returns a count.
-
-`,
-  ),
-  obsolete_waitlist: replaceOnce(
-    replaceOnce(
-      goldenSpec,
-      'A first-time full request returns "Fully booked" without mutation.',
-      'A first-time full request is automatically queued on a waitlist.',
-    ),
-    '- Automatic waitlisting or queuing when workshops are full.',
+  // Reinstate the explicitly rejected waitlist decision.
+  spec = replaceOnce(
+    spec,
+    'A first-time full request returns "Fully booked" without mutation.',
+    'A first-time full request joins an automatic waitlist.',
+  );
+  spec = replaceOnce(
+    spec,
+    'then the result is "Fully booked", with no change to reservations or remaining seats.',
+    'then the member is added to the automatic waitlist.',
+  );
+  spec = replaceOnce(
+    spec,
+    'the other receives "Fully booked", exactly one seat is consumed',
+    'the other is added to the automatic waitlist, exactly one seat is consumed',
+  );
+  spec = replaceOnce(
+    spec,
+    '- Automatic waitlisting or queuing when workshops are full.\n',
     '',
-  )
-    .replace(
-      '- **AC-006:** Given a workshop not yet started with zero remaining seats and a member without an active reservation, when that member tries to reserve, then the result is "Fully booked", with no change to reservations or remaining seats.',
-      '- **AC-006:** Given a full workshop and an unreserved member, when the member tries to reserve, then the member is placed on the waitlist.',
-    )
-    .replace(
-      '- **AC-007:** Given a workshop not yet started with exactly one seat left, when two different unreserved members request that last seat concurrently, then exactly one becomes "Reserved", the other receives "Fully booked", exactly one seat is consumed, and remaining seats never goes below zero.',
-      '- **AC-007:** Given a workshop with one remaining seat, when two different unreserved members request it concurrently, then exactly one becomes "Reserved", the other is placed on the waitlist, exactly one seat is consumed, and remaining seats never goes below zero.',
-    ),
-  invented_email: replaceOnce(
-    goldenSpec,
+  );
+
+  // Omit cancellation entirely, breaking agreed scope completeness.
+  spec = between(
+    spec,
+    '### US-003: Cancel and later rebook my seat',
     '## Assumptions',
-    `### US-004: Email an RSVP confirmation
+    '',
+  );
 
-As a member, I want a confirmation email after reserving, so that I have a record of my seat.
-
-#### Acceptance criteria
-
-- **AC-014:** Given a member successfully reserves a seat, when the reservation completes, then a confirmation email is sent to that member.
-
-## Assumptions`,
-  ),
-  missing_assumption: between(
-    goldenSpec,
+  // Invent an explicitly excluded email-delivery story.
+  spec = replaceOnce(
+    spec,
     '## Assumptions',
-    '## Out of Scope',
-    '## Assumptions\n\nNone.\n\n',
-  ),
-};
+    [
+      '### US-004: Send RSVP confirmation emails',
+      '',
+      'As a member, I want an email after reserving so I have a record of my seat.',
+      '',
+      '#### Acceptance criteria',
+      '',
+      '- **AC-014:** Given a successful reservation, when it completes, then an email confirmation is sent to the member.',
+      '',
+      '## Assumptions',
+    ].join('\n'),
+  );
+
+  // Drop the implicit signed-in-session assumption.
+  return between(spec, '## Assumptions', '## Out of Scope', '## Assumptions\n\nNone.\n\n');
+}
 
 const ids = [
   'completeness',
@@ -181,30 +191,6 @@ function control(id: string, generated: string, ...failing: string[]): Control {
 }
 
 export const controls: Control[] = [
-  control('correct-spec', specimens.complete),
-  control('missing-story', specimens.omitted_cancellation, 'completeness'),
-  control('vague-acceptance', specimens.vague_criteria, 'verifiable_stories'),
-  control(
-    'horizontal-story',
-    specimens.horizontal_story,
-    'completeness',
-    'vertical_stories',
-  ),
-  control(
-    'obsolete-waitlist',
-    specimens.obsolete_waitlist,
-    'completeness',
-    'superseded_decisions',
-  ),
-  control(
-    'invented-emails',
-    specimens.invented_email,
-    'completeness',
-    'out_of_scope',
-  ),
-  control(
-    'uncaptured-assumption',
-    specimens.missing_assumption,
-    'captured_assumptions',
-  ),
+  control('correct-spec', goldenSpec),
+  control('combined-defects', makeDefectiveSpec(), ...ids),
 ];
