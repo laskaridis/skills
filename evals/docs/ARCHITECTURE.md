@@ -118,7 +118,7 @@ inputs/                    archived skill, grading, cases, suite hooks and parse
 <case>/
   result.json
   workspace*
-  agent/         prompt.txt command.json trace.jsonl stderr.txt final.txt execution.json
+  agent/         prompt.txt trace.jsonl stderr.txt final.txt execution.json
   judge-quality/   bundle.json + run files
 calibration/<control>/
 ```

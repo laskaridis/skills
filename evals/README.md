@@ -132,7 +132,7 @@ skills/<skill>/artifacts/<run-id>/
   calibration/              # When controls run
 ```
 
-Invocation directories keep `prompt.txt`, `command.json`, `trace.jsonl`,
+Invocation directories keep `prompt.txt`, `trace.jsonl`,
 `stderr.txt`, `final.txt`, and `execution.json`; judge directories add
 `bundle.json`, the rubric, schema, and `finding.json`. Start with `final.txt`
 for a response, `bundle.json` for what the judge saw, and `stderr.txt` for

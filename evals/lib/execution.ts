@@ -52,12 +52,6 @@ export async function capture(
 ): Promise<Execution> {
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(path.join(directory, 'prompt.txt'), prompt);
-  await writeJSON(path.join(directory, 'command.json'), {
-    command,
-    args,
-    cwd,
-    timeout_ms: timeout,
-  });
   const stdout = createWriteStream(path.join(directory, 'trace.jsonl'));
   const stderr = createWriteStream(path.join(directory, 'stderr.txt'));
   const started = Date.now();

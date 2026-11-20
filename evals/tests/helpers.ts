@@ -192,6 +192,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 if (process.argv.includes('--version')) { console.log('fake-codex'); process.exit(0); }
 const args = process.argv.slice(2);
+if (process.env.FAKE_CODEX_ARGS) fs.writeFileSync(process.env.FAKE_CODEX_ARGS, JSON.stringify(args));
 const home = process.env.CODEX_HOME;
 const session = 'fake-session';
 const mode = process.env.FAKE_CONTEXT || 'full';

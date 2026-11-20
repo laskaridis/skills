@@ -251,14 +251,14 @@ const codex: Agent = {
           }
         : null;
     } catch {
-      /* Session-context availability varies by CLI; preserve the explicit command settings regardless. */
+      /* Session-context availability varies by CLI; preserve the requested settings in results.settings regardless. */
       return null;
     }
   },
   settingsNote: (observed) =>
     observed
       ? 'Observed in the persisted CLI turn_context.'
-      : 'CLI did not expose a readable turn_context; command.json records explicit requested settings.',
+      : 'CLI did not expose a readable turn_context; results.settings records the requested settings.',
 };
 
 const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -351,7 +351,7 @@ const claude: Agent = {
   settingsNote: (observed) =>
     observed
       ? 'Model and permission mode observed in the stream-json init event; reasoning effort is not reported by the CLI.'
-      : 'CLI did not emit an init event; command.json records explicit requested settings.',
+      : 'CLI did not emit an init event; results.settings records the requested settings.',
 };
 
 const AGENTS: Record<AgentName, Agent> = { codex, claude };

@@ -1,4 +1,4 @@
-import { test } from 'vitest';
+import { test, vi } from 'vitest';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
@@ -102,6 +102,9 @@ test('capture retains supplied final file over event text and supplies stdin', a
   // Given
   const root = await temporary(t);
 
+  const timers = vi.spyOn(globalThis, 'setTimeout');
+
+  t.onTestFinished(() => timers.mockRestore());
   await put(root, 'call/final.txt', 'Saved');
 
   // When
@@ -114,12 +117,16 @@ test('capture retains supplied final file over event text and supplies stdin', a
     { cwd: root, directory: path.join(root, 'call'), prompt: 'Input' },
   );
   const stderr = await fs.readFile(path.join(root, 'call/stderr.txt'), 'utf8');
-  const command = await readJSON(path.join(root, 'call/command.json'));
+  const command = await fs.access(path.join(root, 'call/command.json')).then(
+    () => true,
+    () => false,
+  );
 
   // Then
   assert.equal(result.final_response, 'Saved');
   assert.equal(stderr, 'Input');
-  assert.equal(command.timeout_ms, TIMEOUT);
+  assert.ok(timers.mock.calls.some(([, delay]) => delay === TIMEOUT));
+  assert.equal(command, false);
 });
 
 test('capture reports failed spawn', async (t) => {
@@ -218,9 +225,11 @@ for (const mode of [
     const bin = await fakeCodex(root);
     const oldPath = process.env.PATH;
     const oldMode = process.env.FAKE_CONTEXT;
+    const record = path.join(root, 'args.json');
 
     t.onTestFinished(() => {
       process.env.PATH = oldPath;
+      delete process.env.FAKE_CODEX_ARGS;
 
       if (oldMode === undefined) {
         delete process.env.FAKE_CONTEXT;
@@ -230,6 +239,7 @@ for (const mode of [
     });
     process.env.PATH = `${bin}:${oldPath}`;
     process.env.FAKE_CONTEXT = mode;
+    process.env.FAKE_CODEX_ARGS = record;
 
     // When
     const result = await invoke(
@@ -245,10 +255,15 @@ for (const mode of [
       'Task',
       mode === 'full' ? { judge: true, schema: 'schema.json' } : {},
     );
-    const command = await readJSON(path.join(root, 'call/command.json'));
+    const args: string[] = await readJSON(record);
+    const command = await fs.access(path.join(root, 'call/command.json')).then(
+      () => true,
+      () => false,
+    );
 
     // Then
     assert.equal(result.status, 'ok');
+    assert.equal(command, false);
     assert.equal(result.final_response, 'Saved response');
 
     if (mode === 'full') {
@@ -269,13 +284,13 @@ for (const mode of [
       assert.equal(result.observed_settings, null);
     }
 
-    assert.ok(command.args.includes(mode === 'full' ? 'judge' : 'agent'));
-    assert.ok(command.args.includes('--ignore-user-config'));
+    assert.ok(args.includes(mode === 'full' ? 'judge' : 'agent'));
+    assert.ok(args.includes('--ignore-user-config'));
 
     if (mode === 'full') {
-      assert.equal(command.args[0], 'exec');
-      assert.ok(!command.args.includes('resume'));
-      assert.ok(command.args.includes('--output-schema'));
+      assert.equal(args[0], 'exec');
+      assert.ok(!args.includes('resume'));
+      assert.ok(args.includes('--output-schema'));
     }
   });
 }
