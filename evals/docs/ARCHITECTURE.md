@@ -57,7 +57,7 @@ CLI args
   │
   │   workspace = temp dir
   │     ├─ .agents/skills/<name>/   (copy of the skill)
-  │     └─ input/* fixtures         (git init, snapshot)
+  │     └─ fixtures/*                (git init, snapshot)
   │
   │   Agent            prompt = "$skill …" + prompt.md          (workspace-write)
   │        ▼
@@ -103,7 +103,7 @@ so a judge failure is never counted as a quality failure.
 
 ## Evaluation suite folder: `evals/<skill>/`
 
-A suite is named after the skill it evaluates (example `evals/plan/` for `skills/plan/`). The harness discovers everything by convention. Every evaluation suite needs at least one case defined as `cases/<id>/` and the following files included for each case: `prompt.md`, `expected.md` and `input/`.
+A suite is named after the skill it evaluates (example `evals/plan/` for `skills/plan/`). The harness discovers everything by convention. Every evaluation suite needs at least one case defined as `cases/<id>/` and the following files included for each case: `prompt.md`, `expected.md` and `fixtures/`.
 
 ```
 evals/<skill>/
@@ -111,7 +111,7 @@ evals/<skill>/
   cases/<id>/            Required: At least one case.
     prompt.md            Required: The user request sent to the skill.
     expected.md          Required: Requirements the quality judge grades.
-    input/               Required: Files the agent starts with, copied into a temp git repo.
+    fixtures/            Required: Files the agent starts with, copied into a temp git repo.
   checks.ts              Optional: deterministic checks on output files and inputs.
   judge-tests.ts         Optional: good and bad controls for `--calibrate`.
   run.ts                 Optional: wrapper for `pnpm eval:<skill>`.
@@ -123,7 +123,7 @@ evals/<skill>/
 | `cases/<id>/`        | One scenario; `<id>` is the name passed to `--case`. Safe names only. No `.git`, symlinks or non-regular files.                                                                                                                                                                                                                   |
 | `prompt.md`          | The user request. The harness prepends the explicit `$<skill>` invocation. Write it as a real request; do not mention the checklist.                                                                                                                                                                                              |
 | `expected.md`        | Requirements the quality judge grades: one `- [id] text` each, indented lines continue it. IDs are stable and unique, since results and `--compare` key on them.                                                                                                                                                                  |
-| `input/`             | Starting workspace, copied as-is and committed in a temp git repo. Mirror the layout the skill expects (e.g. `specs/…`). Fixture edits are allowed unless a suite-specific validator rejects them. Use `.gitkeep` for an empty input.                                                                                                                                 |
+| `fixtures/`          | Starting workspace, copied as-is and committed in a temp git repo. Mirror the layout the skill expects (e.g. `specs/…`). Fixture edits are allowed unless a suite-specific validator rejects them. Use `.gitkeep` for an empty fixtures directory.                                                                                |
 | `checks.ts`          | Optional deterministic checks (output files, schema, protected inputs). Export `checkCase`, which receives `{caseId, workspace, initialSnapshot, finalResponse}` and returns `{status: pass \| fail, failures[]}`. The result goes to the judge as evidence. `plan/checks.ts` holds the plan structure and protected-input rules. |
 | `judge-tests.ts`     | Optional known good and bad controls for `--calibrate`. Export `controls`; include flawed outputs that look plausible.                                                                                                                                                                                                            |
 | `grading/`           | Suite-specific rubric (`*.md`) and schema (`*.schema.json`) pair. The harness reads only the shared `evals/grading/` files, so these are not loaded today.                                                                                                                                                                        |

@@ -122,7 +122,7 @@ export async function runCase(
       const to = path.join(workspace, file);
 
       await fs.mkdir(path.dirname(to), { recursive: true });
-      await fs.copyFile(path.join(item.input, file), to);
+      await fs.copyFile(path.join(item.fixtures, file), to);
     }
 
     gitInit(workspace);

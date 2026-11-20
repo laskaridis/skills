@@ -25,7 +25,7 @@ export interface JudgeFinding {
 
 export interface CaseDefinition {
   id: string;
-  input: string;
+  fixtures: string;
   fixtureFiles: string[];
   prompt: string;
   requirements: Requirement[];

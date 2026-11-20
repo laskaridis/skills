@@ -25,8 +25,8 @@ Vitest unit tests make no Codex calls.
 
 ## Cases and grading
 
-`cases/complete/input/specs/seat-reservation.spec.md` defines the full feature.
-`cases/ambiguous/input/specs/seat-reservation.spec.md` leaves late cancellation
+`cases/complete/fixtures/specs/seat-reservation.spec.md` defines the full feature.
+`cases/ambiguous/fixtures/specs/seat-reservation.spec.md` leaves late cancellation
 unresolved. Each case's `prompt.md` requests design and task-plan output without
 application implementation. `expected.md` retains the four stable quality IDs:
 intent fidelity, verifiability, actionability, and dependency correctness, with

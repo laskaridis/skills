@@ -51,7 +51,7 @@ async function suite(t: import('vitest').TestContext) {
   const root = await temporary(t);
 
   for (const id of ['z-last', 'a-first']) {
-    await put(root, `cases/${id}/input/.gitkeep`);
+    await put(root, `cases/${id}/fixtures/.gitkeep`);
     await put(root, `cases/${id}/prompt.md`, 'Task');
     await put(root, `cases/${id}/expected.md`, '- [works] Works');
   }
@@ -64,7 +64,7 @@ test('case discovery sorts, omits packaging markers, handles empty inputs and ar
   const root = await suite(t);
   const initial = await loadCases(root, 'skill');
 
-  await fs.unlink(path.join(root, 'cases/a-first/input/.gitkeep'));
+  await fs.unlink(path.join(root, 'cases/a-first/fixtures/.gitkeep'));
 
   // When
   const cases = await loadCases(root, 'skill');
@@ -74,7 +74,7 @@ test('case discovery sorts, omits packaging markers, handles empty inputs and ar
     path.join(root, 'cases/z-last/expected.parsed.json'),
   );
 
-  await put(root, 'cases/a-first/input/new.md', 'Changed');
+  await put(root, 'cases/a-first/fixtures/new.md', 'Changed');
   const changed = await loadCases(root, 'skill');
 
   // Then
@@ -135,48 +135,48 @@ for (const [name, mutate, pattern] of [
     /ordinary file/,
   ],
   [
-    'missing input',
+    'missing fixtures',
     (root) =>
-      fs.rm(path.join(root, 'cases/a-first/input'), { recursive: true }),
+      fs.rm(path.join(root, 'cases/a-first/fixtures'), { recursive: true }),
     /Missing directory/,
   ],
   [
     'git directory',
-    (root) => fs.mkdir(path.join(root, 'cases/a-first/input/.git')),
+    (root) => fs.mkdir(path.join(root, 'cases/a-first/fixtures/.git')),
     /Unsafe fixture/,
   ],
   [
     'newline path',
-    (root) => put(root, 'cases/a-first/input/bad\nname'),
+    (root) => put(root, 'cases/a-first/fixtures/bad\nname'),
     /Unsafe fixture/,
   ],
   [
     'carriage return path',
-    (root) => put(root, 'cases/a-first/input/bad\rname'),
+    (root) => put(root, 'cases/a-first/fixtures/bad\rname'),
     /Unsafe fixture/,
   ],
   [
     'backslash path',
-    (root) => put(root, 'cases/a-first/input/bad\\name'),
+    (root) => put(root, 'cases/a-first/fixtures/bad\\name'),
     /Unsafe fixture/,
   ],
   [
     'skill collision',
     (root) =>
-      fs.mkdir(path.join(root, 'cases/a-first/input/.agents/skills/skill'), {
+      fs.mkdir(path.join(root, 'cases/a-first/fixtures/.agents/skills/skill'), {
         recursive: true,
       }),
     /collision/,
   ],
   [
     'skill ancestor collision',
-    (root) => put(root, 'cases/a-first/input/.agents'),
+    (root) => put(root, 'cases/a-first/fixtures/.agents'),
     /collision/,
   ],
   [
     'symlink',
     (root) =>
-      fs.symlink('/outside', path.join(root, 'cases/a-first/input/link')),
+      fs.symlink('/outside', path.join(root, 'cases/a-first/fixtures/link')),
     /Non-regular/,
   ],
 ] as [string, (root: string) => Promise<unknown>, RegExp][]) {

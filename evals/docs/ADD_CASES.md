@@ -5,7 +5,7 @@ A case is a directory under an existing skill (`skills/<skill>/`, or pass
 
 ```text
 <skill>/cases/<case>/
-  input/        # Small repository copied into the agent workspace
+  fixtures/     # Small repository copied into the agent workspace
   prompt.md     # The user's task
   expected.md   # Evaluator's checklist, withheld from the agent
 ```
@@ -17,7 +17,7 @@ assessment criteria in `expected.md`.
 
 Fixture rules: ordinary files and directories only. Symlinks, `.git`, unsafe
 paths, and collisions with `.agents/skills/<skill>/` are rejected. For
-intentionally empty input, commit `input/.gitkeep` (omitted from agent inputs).
+intentionally empty fixtures directory, commit `fixtures/.gitkeep` (omitted from agent inputs).
 Fixture edits are allowed, so express protected files or required outputs in the
 checklist or a validator. Case and skill names use the identifier rules below.
 
@@ -27,11 +27,11 @@ The fixture's README mentions a script absent from `package.json`; success means
 fixing that command while preserving everything else.
 
 ```sh
-mkdir -p doc-gardening/cases/stale-command/input
-cat > doc-gardening/cases/stale-command/input/package.json <<'JSON'
+mkdir -p doc-gardening/cases/stale-command/fixtures
+cat > doc-gardening/cases/stale-command/fixtures/package.json <<'JSON'
 {"scripts":{"test":"node --test"}}
 JSON
-cat > doc-gardening/cases/stale-command/input/README.md <<'MD'
+cat > doc-gardening/cases/stale-command/fixtures/README.md <<'MD'
 # Example
 Run the tests with `pnpm check`.
 MD
@@ -71,7 +71,7 @@ checklist are archived.
 ## Test that a skill asks instead of guessing
 
 A case is a single turn, so a skill that should stop and ask is graded on its
-question. Leave the unresolved decision out of `input/`, tell the agent in
+question. Leave the unresolved decision out of `fixtures/`, tell the agent in
 `prompt.md` to raise consequential decisions, and write `expected.md` for the
 question:
 

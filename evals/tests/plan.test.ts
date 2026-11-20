@@ -21,7 +21,7 @@ async function setup(t: import('vitest').TestContext) {
   await put(
     root,
     SPEC,
-    await fs.readFile(path.join(EVALS, 'plan/cases/complete/input', SPEC)),
+    await fs.readFile(path.join(EVALS, 'plan/cases/complete/fixtures', SPEC)),
   );
   const initial = await snapshot(root);
 
@@ -230,7 +230,7 @@ test('ambiguous case passes only when the workspace is left untouched', async (t
   await put(
     untouched,
     SPEC,
-    await fs.readFile(path.join(EVALS, 'plan/cases/complete/input', SPEC)),
+    await fs.readFile(path.join(EVALS, 'plan/cases/complete/fixtures', SPEC)),
   );
 
   // When

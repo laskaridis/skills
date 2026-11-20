@@ -15,7 +15,7 @@ async function environment(t: import('vitest').TestContext) {
   });
   process.env.PATH = `${bin}${path.delimiter}${oldPath}`;
   await put(root, 'skill/SKILL.md', '# Synthetic');
-  await put(root, 'suite/cases/basic/input/document.md', 'Old');
+  await put(root, 'suite/cases/basic/fixtures/document.md', 'Old');
   await put(root, 'suite/cases/basic/prompt.md', 'Improve');
   await put(root, 'suite/cases/basic/expected.md', '- [accurate] Accurate');
 

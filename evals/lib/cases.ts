@@ -123,13 +123,13 @@ export async function loadCases(
     }
 
     const directory = path.join(root, entry.name);
-    const input = path.join(directory, 'input');
+    const fixtures = path.join(directory, 'fixtures');
 
-    await ordinaryDirectory(input);
+    await ordinaryDirectory(fixtures);
 
     // Inspect even empty directories, and never traverse a symlink or accept .git.
     const inspect = async (relative = '') => {
-      for (const item of await fs.readdir(path.join(input, relative), {
+      for (const item of await fs.readdir(path.join(fixtures, relative), {
         withFileTypes: true,
       })) {
         const name = relative ? `${relative}/${item.name}` : item.name;
@@ -144,7 +144,7 @@ export async function loadCases(
           (!item.isDirectory() && installed.startsWith(`${name}/`))
         ) {
           throw new Error(
-            `Unsafe fixture path or installed-skill collision: ${path.join(input, name)}`,
+            `Unsafe fixture path or installed-skill collision: ${path.join(fixtures, name)}`,
           );
         }
 
@@ -152,14 +152,14 @@ export async function loadCases(
           await inspect(name);
         } else if (!item.isFile()) {
           throw new Error(
-            `Non-regular fixture file: ${path.join(input, name)}`,
+            `Non-regular fixture file: ${path.join(fixtures, name)}`,
           );
         }
       }
     };
 
     await inspect();
-    const fixtureFiles = (await files(input)).filter(
+    const fixtureFiles = (await files(fixtures)).filter(
       (file) => path.posix.basename(file) !== '.gitkeep',
     );
     const prompt = await optionalText(path.join(directory, 'prompt.md'));
@@ -178,7 +178,7 @@ export async function loadCases(
 
     cases.push({
       id: entry.name,
-      input,
+      fixtures,
       fixtureFiles,
       prompt,
       expectedMarkdown,

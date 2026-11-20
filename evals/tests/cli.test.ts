@@ -123,7 +123,7 @@ async function environment(t: import('vitest').TestContext) {
   await put(root, 'skill/SKILL.md', '# Synthetic');
 
   for (const id of ['z-last', 'a-first']) {
-    await put(root, `evals/synthetic/cases/${id}/input/document.md`, 'Old');
+    await put(root, `evals/synthetic/cases/${id}/fixtures/document.md`, 'Old');
     await put(root, `evals/synthetic/cases/${id}/prompt.md`, 'Improve');
     await put(
       root,

@@ -31,7 +31,7 @@ export async function calibrate(
 
       for (const file of item.fixtureFiles) {
         inputFiles[file] = await fs.readFile(
-          path.join(item.input, file),
+          path.join(item.fixtures, file),
           'utf8',
         );
       }

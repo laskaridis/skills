@@ -77,9 +77,9 @@ export async function fixture(
   t: TestContext,
 ): Promise<{ root: string; options: RunOptions; item: CaseDefinition }> {
   const root = await temporary(t);
-  const input = path.join(root, 'input');
+  const fixtures = path.join(root, 'fixtures');
 
-  await put(input, 'document.md', 'Old');
+  await put(fixtures, 'document.md', 'Old');
   await put(root, 'skill/SKILL.md', '# Synthetic');
   return {
     root,
@@ -94,7 +94,7 @@ export async function fixture(
     },
     item: {
       id: 'basic',
-      input,
+      fixtures,
       fixtureFiles: ['document.md'],
       inputHash: 'fixture-hash',
       prompt: 'Improve document.',

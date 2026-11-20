@@ -25,7 +25,7 @@ evals/
     judge-tests.mjs            # Optional prepared judge controls
     cases/
       <case>/
-        input/                 # Fixture repository, including intentionally empty input
+        fixtures/              # Fixture repository, including intentionally empty fixtures
         prompt.md
         expected.md
         first-turn.md          # Optional; must be paired with reply.md
@@ -79,7 +79,7 @@ plan case will retain those four IDs and their complete grading qualifications.
 ## Execution and optional extensions
 
 Each case runs in a fresh temporary Git repository containing the skill and
-`input/` contents. Expectations, replies, schemas, and judge instructions remain
+`fixtures/` contents. Expectations, replies, schemas, and judge instructions remain
 outside that workspace. Record an initial snapshot; archive the first turn and
 final workspace without following symlinks. Preserve the current runtime isolation,
 authentication handling, timeout cleanup, raw usage, and observed settings capture.
@@ -156,7 +156,7 @@ credentials or sum resumed-session usage that may be cumulative.
    on step 2.
 
 4. **Migrate the plan suite without weakening it.** Move fixture specs under case
-   input directories; move prompts and full evaluator expectations into case files.
+   fixture directories; move prompts and full evaluator expectations into case files.
    Preserve required behaviors, exclusions, edge cases, alternative decompositions,
    architectural qualifications, and first-turn policy checks. Extract the existing
    structural validator into `checks.mjs` and degraded control into
@@ -181,7 +181,7 @@ credentials or sum resumed-session usage that may be cumulative.
 
 ## Acceptance criteria
 
-- A developer can add a basic case using only `input/`, `prompt.md`, and `expected.md`.
+- A developer can add a basic case using only `fixtures/`, `prompt.md`, and `expected.md`.
 - The shared runner executes a synthetic non-plan skill case without skill-specific
   engine changes; empty fixture directories can be represented with `.gitkeep`.
   Treat that marker as packaging metadata and omit it from copied agent inputs.
