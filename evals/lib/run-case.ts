@@ -136,8 +136,6 @@ export async function runCase(
     );
     const prompt = agent.skillPrompt(options.skillName, item.prompt);
 
-    console.log(`${item.id}: executing`);
-
     invokingAgent = true;
     const execution = await (options.transport ?? invoke)(
       options,
@@ -162,9 +160,6 @@ export async function runCase(
     }
 
     await check();
-    console.log(
-      `${item.id}: judging requirements (checks ${result.checks.status})`,
-    );
     result.judge = await judge(
       options,
       runtime,

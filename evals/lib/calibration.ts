@@ -36,7 +36,6 @@ export async function calibrate(
         );
       }
 
-      console.log(`calibration: ${control.id}`);
       const result = await judge(
         options,
         runtime,

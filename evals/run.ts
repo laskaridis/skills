@@ -23,6 +23,13 @@ import {
 } from './lib/reporting.ts';
 import { preflight } from './lib/preflight.ts';
 import { runCase } from './lib/run-case.ts';
+import {
+  busy,
+  printCalibration,
+  printCase,
+  printHeader,
+  printSummary,
+} from './lib/ui.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -141,6 +148,7 @@ export async function main(
   const suite = path.join(evalRoot, options.skillName);
   const { previous, cliVersion } = await preflight(options, suite);
 
+  const started = Date.now();
   const runId =
     new Date().toISOString().replace(/[:.]/g, '-') + '-' + process.pid;
   const directory = path.join(suite, 'artifacts', runId);
@@ -243,28 +251,31 @@ export async function main(
   try {
     await agent.prepareRuntime(runtime);
 
-    console.log(`Artifacts: ${directory}`);
+    printHeader(results, directory);
     await persist();
 
     for (const item of cases.filter(
       (c) => !options.case || c.id === options.case,
     )) {
-      results.cases.push(await runCase(options, runtime, directory, item));
+      const result = await busy(item.id, () =>
+        runCase(options, runtime, directory, item),
+      );
+
+      results.cases.push(result);
+      printCase(result);
       await persist();
     }
 
     if (options.calibrate) {
-      results.calibration = await calibrate(
-        options,
-        runtime,
-        directory,
-        cases,
-        controls,
+      results.calibration = await busy('calibration', () =>
+        calibrate(options, runtime, directory, cases, controls),
       );
+      printCalibration(results.calibration);
     }
 
     await persist();
-    console.log(`Report: ${path.join(directory, 'report.md')}`);
+
+    printSummary(results, directory, Date.now() - started);
 
     if (infrastructureFailure(results)) {
       process.exitCode = 2;
