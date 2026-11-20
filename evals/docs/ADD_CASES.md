@@ -40,7 +40,7 @@ fixing that command while preserving everything else.
 
 ```sh
 # Run from evals/
-mkdir -p skills/skills/doc-gardening/cases/stale-command/fixtures
+mkdir -p skills/doc-gardening/cases/stale-command/fixtures
 cat > skills/doc-gardening/cases/stale-command/fixtures/package.json <<'JSON'
 {"scripts":{"test":"node --test"}}
 JSON
