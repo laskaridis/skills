@@ -34,7 +34,11 @@ export async function checkCase({
     failures.push('Spec path already existed in the case fixture: ' + SPEC);
   }
 
-  if (!(await readablePath(workspace, SPEC))) {
+  // readablePath throws for a missing path; absence is a test failure, not
+  // a validator crash.
+  const safe = await readablePath(workspace, SPEC).catch(() => false);
+
+  if (!safe) {
     failures.push('Missing or unsafe specification: ' + SPEC);
   } else if (!(await fs.readFile(path.join(workspace, SPEC), 'utf8')).trim()) {
     failures.push('Empty specification: ' + SPEC);
