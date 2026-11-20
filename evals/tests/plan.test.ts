@@ -4,8 +4,8 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { temporary, put, EVALS } from './helpers.ts';
 import { snapshot } from '../lib/utils.ts';
-import { checkCase, checkStructure } from '../plan/checks.ts';
-import { degradedPlan, controls } from '../plan/judge-tests.ts';
+import { checkCase, checkStructure } from '../skills/plan/checks.ts';
+import { degradedPlan, controls } from '../skills/plan/judge-tests.ts';
 import { loadCases } from '../lib/cases.ts';
 import { validateControls } from '../lib/loader.ts';
 
@@ -21,7 +21,9 @@ async function setup(t: import('vitest').TestContext) {
   await put(
     root,
     SPEC,
-    await fs.readFile(path.join(EVALS, 'plan/cases/complete/fixtures', SPEC)),
+    await fs.readFile(
+      path.join(EVALS, 'skills/plan/cases/complete/fixtures', SPEC),
+    ),
   );
   const initial = await snapshot(root);
 
@@ -44,7 +46,7 @@ async function check(
 test('plan controls satisfy structure while encoding deliberate semantic failures', async (t) => {
   // Given
   const { root, initial } = await setup(t);
-  const cases = await loadCases(path.join(EVALS, 'plan'), 'plan');
+  const cases = await loadCases(path.join(EVALS, 'skills/plan'), 'plan');
 
   // When
   const result = await check(root, initial, degradedPlan());
@@ -230,7 +232,9 @@ test('ambiguous case passes only when the workspace is left untouched', async (t
   await put(
     untouched,
     SPEC,
-    await fs.readFile(path.join(EVALS, 'plan/cases/complete/fixtures', SPEC)),
+    await fs.readFile(
+      path.join(EVALS, 'skills/plan/cases/complete/fixtures', SPEC),
+    ),
   );
 
   // When

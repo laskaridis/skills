@@ -1,4 +1,4 @@
-import type { Control } from '../lib/types.ts';
+import type { Control } from '../../lib/types.ts';
 
 const SPEC = 'specs/seat-reservation.spec.md';
 

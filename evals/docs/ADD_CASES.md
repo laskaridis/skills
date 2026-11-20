@@ -4,7 +4,7 @@ A case is a directory under an existing skill (`skills/<skill>/`, or pass
 `--skill DIR`):
 
 ```text
-<skill>/cases/<case>/
+evals/skills/<skill>/cases/<case>/
   fixtures/     # Small repository copied into the agent workspace
   prompt.md     # The user's task
   expected.md   # Evaluator's checklist, withheld from the agent
@@ -14,6 +14,13 @@ Scaffold a new case with `pnpm eval <skill> --case <case> --create`. It creates
 `prompt.md`, `expected.md` (placeholders that already parse) and
 `fixtures/.gitkeep`. It fails without changing anything if the skill directory
 is missing (a mistyped skill is not created) or the case already exists.
+
+Suites live under `evals/skills/<skill>/`, one per skill in the repository-root
+`skills/<skill>/`. To add a suite for a skill that has none, create the empty
+directory first (`mkdir -p evals/skills/<skill>`), then scaffold its first case
+with `--create`. Optional `checks.ts`, `judge-tests.ts`, `run.ts` and `README.md`
+sit next to `cases/`; their imports of the harness use `../../lib/` and
+`../../run.ts`.
 
 No manifest, schema, rubric, or validator is required. Keep fixtures small and
 write expectations before looking at outputs. The harness prefixes `prompt.md`
@@ -86,11 +93,11 @@ question:
 ```
 
 Pair it with a `checks.ts` rule that no output files were written. See the
-[ambiguous plan case](../plan/cases/ambiguous/) and its [check](../plan/checks.ts).
+[ambiguous plan case](../skills/plan/cases/ambiguous/) and its [check](../skills/plan/checks.ts).
 
 ## Add deterministic checks
 
-Use `<skill>/checks.ts` for conditions better verified exactly: valid JSON,
+Use `evals/skills/<skill>/checks.ts` for conditions better verified exactly: valid JSON,
 required paths, unchanged fixtures. Export `checkCase`:
 
 ```ts
@@ -134,7 +141,7 @@ Checks run after execution, and on early exits when feasible. Throwing or
 returning an invalid shape is a harness failure (exit 2); a deliberate failure
 should return `fail` with explanations. A failed check does not suppress judging
 when usable evidence exists. Without the module, checks report `not_run`. See the
-[plan validator](../plan/checks.ts) for a larger example.
+[plan validator](../skills/plan/checks.ts) for a larger example.
 
 ## Check the judge with controls
 
@@ -150,7 +157,7 @@ the judge model without an agent, so it adds model calls and usage. A suite
 without controls reports calibration as `unavailable`.
 
 Provide controls by exporting a nonempty `controls` array from
-`<skill>/judge-tests.ts`:
+`evals/skills/<skill>/judge-tests.ts`:
 
 ```ts
 import type { Control } from '../lib/types.ts';
@@ -172,5 +179,5 @@ a `finalResponse` string, and an `expected` status (`pass`, `fail`, or
 `ungradable`) for every requirement ID. A mismatch is reported as
 `grader_disagreement` with expected and observed statuses; judge failures remain
 separate. Passing controls alone does not establish judge reliability. See the
-[degraded plan control](../plan/judge-tests.ts), which looks plausible but should
+[degraded plan control](../skills/plan/judge-tests.ts), which looks plausible but should
 fail all four semantic requirements.

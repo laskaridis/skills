@@ -10,7 +10,7 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { argumentsFor, main } from '../run.ts';
-import * as compatibility from '../plan/run.ts';
+import * as compatibility from '../skills/plan/run.ts';
 import { temporary, put, fakeCodex, fakeTransport, EVALS } from './helpers.ts';
 import { readJSON } from '../lib/utils.ts';
 
@@ -67,7 +67,7 @@ test('main scaffolds a case without calling the agent', async (t) => {
   // Given
   const root = await temporary(t);
 
-  await fs.mkdir(path.join(root, 'plan'));
+  await fs.mkdir(path.join(root, 'skills', 'plan'), { recursive: true });
   const calls: TransportCall[] = [];
   const transport = fakeTransport({}, calls);
   const log = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -81,7 +81,7 @@ test('main scaffolds a case without calling the agent', async (t) => {
   });
 
   // Then
-  const directory = path.join(root, 'plan', 'cases', 'x');
+  const directory = path.join(root, 'skills', 'plan', 'cases', 'x');
 
   assert.ok((await fs.stat(path.join(directory, 'prompt.md'))).isFile());
   assert.ok((await fs.stat(path.join(directory, 'expected.md'))).isFile());
@@ -95,7 +95,7 @@ test('main fails when the scaffolded case already exists', async (t) => {
   const log = vi.spyOn(console, 'log').mockImplementation(() => {});
 
   t.onTestFinished(() => log.mockRestore());
-  await put(root, 'plan/cases/x/prompt.md', 'Keep');
+  await put(root, 'skills/plan/cases/x/prompt.md', 'Keep');
 
   // When
   const act = main(['plan', '--case', 'x', '--create'], { evalRoot: root });
@@ -103,7 +103,7 @@ test('main fails when the scaffolded case already exists', async (t) => {
   // Then
   await assert.rejects(act, /already exists/);
   assert.equal(
-    await fs.readFile(path.join(root, 'plan/cases/x/prompt.md'), 'utf8'),
+    await fs.readFile(path.join(root, 'skills/plan/cases/x/prompt.md'), 'utf8'),
     'Keep',
   );
 });
@@ -129,7 +129,7 @@ for (const args of [
 
 test('shared and compatibility CLI expose help, reject removed self-test and missing model', () => {
   // Given
-  const files = ['run.ts', 'plan/run.ts'];
+  const files = ['run.ts', 'skills/plan/run.ts'];
 
   // Then
   assert.equal(typeof compatibility.checkStructure, 'function');
@@ -179,11 +179,15 @@ async function environment(t: import('vitest').TestContext) {
   await put(root, 'skill/SKILL.md', '# Synthetic');
 
   for (const id of ['z-last', 'a-first']) {
-    await put(root, `evals/synthetic/cases/${id}/fixtures/document.md`, 'Old');
-    await put(root, `evals/synthetic/cases/${id}/prompt.md`, 'Improve');
     await put(
       root,
-      `evals/synthetic/cases/${id}/expected.md`,
+      `evals/skills/synthetic/cases/${id}/fixtures/document.md`,
+      'Old',
+    );
+    await put(root, `evals/skills/synthetic/cases/${id}/prompt.md`, 'Improve');
+    await put(
+      root,
+      `evals/skills/synthetic/cases/${id}/expected.md`,
       '- [accurate] Accurate',
     );
   }
@@ -191,7 +195,7 @@ async function environment(t: import('vitest').TestContext) {
   return {
     root,
     bin,
-    suite: path.join(root, 'evals/synthetic'),
+    suite: path.join(root, 'evals/skills/synthetic'),
     args: ['synthetic', '--model', 'fake', '--skill', path.join(root, 'skill')],
     deps: { evalRoot: path.join(root, 'evals'), transport: fakeTransport() },
   };

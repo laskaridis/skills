@@ -7,7 +7,7 @@
 | `Claude CLI unavailable`      | Install `claude` and put it on `PATH`.                                                                              |
 | `/<skill> isn't available`    | Claude only discovers skills from the project setting source; do not change `--setting-sources` in `lib/agents.ts`. |
 | Authentication failure        | Read the invocation's `stderr.txt`; check file-based auth or provider environment (personal CLI config is ignored). |
-| `Unknown case ID`             | Use the exact directory name under `<skill>/cases/`.                                                                |
+| `Unknown case ID`             | Use the exact directory name under `skills/<skill>/cases/`.                                                         |
 | Checklist parse error         | Open the reported file and line; use `- [stable_id] text` with indented continuations.                              |
 | Invalid fixture or skill path | Use ordinary files/directories; remove unsafe paths, symlinks, installed-skill collisions.                          |
 | `timeout` / `execution_error` | Follow report links to the trace, stderr, and command. The limit is a fixed ten minutes.                            |

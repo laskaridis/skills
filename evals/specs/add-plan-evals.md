@@ -52,7 +52,7 @@ Score each dimension `pass` or `fail`, with specific evidence referencing task I
 
 ## Reports and comparison
 
-Save results under an ignored `evals/plan/artifacts/<run-id>/` directory:
+Save results under an ignored `evals/skills/plan/artifacts/<run-id>/` directory:
 
 - Inputs and exact skill snapshot used.
 - Traces, generated artifacts, and judge responses.

@@ -1,13 +1,13 @@
 # Plan evaluations
 
-Evaluates the `plan` skill with the [shared harness](../README.md), which
+Evaluates the `plan` skill with the [shared harness](../../README.md), which
 documents prerequisites, options, artifacts, and results. Run from `evals/`:
 
 ```sh
 pnpm eval plan --model gpt-6.1-sol --calibrate
 pnpm eval plan --model gpt-6.1-sol --case complete
 pnpm eval:plan --skill ../skills/plan --model gpt-6.1-sol \
-  --compare plan/artifacts/BASELINE_RUN_ID/results.json
+  --compare skills/plan/artifacts/BASELINE_RUN_ID/results.json
 pnpm test tests/plan.test.ts   # offline, no Codex calls
 ```
 
@@ -41,7 +41,7 @@ Criterion labels do not prove semantic coverage. The judge assesses that.
 ## Judge
 
 The shared judge applies each case's `expected.md` with the
-[rubric](../grading/rubric.md) and [schema](../grading/quality.schema.json). It
+[rubric](../../grading/rubric.md) and [schema](../../grading/quality.schema.json). It
 accepts alternative architectures, task counts, and decompositions. It allows
 essential atomic-consistency and deterministic-test constraints and rejects
 gratuitous implementation prescriptions. Judge execution failures are reported

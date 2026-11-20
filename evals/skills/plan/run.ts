@@ -2,13 +2,13 @@
 // Compatibility entry point: all historical options, including --skill, delegate.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { main } from '../run.ts';
+import { main } from '../../run.ts';
 
 export { checkStructure } from './checks.ts';
 
-export { capture, parseTrace } from '../lib/execution.ts';
+export { capture, parseTrace } from '../../lib/execution.ts';
 
-export { compareResults } from '../lib/reporting.ts';
+export { compareResults } from '../../lib/reporting.ts';
 
 if (
   process.argv[1] &&

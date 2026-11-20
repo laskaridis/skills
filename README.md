@@ -54,6 +54,6 @@ I usually use these skills when delivering non-trivial features:
 
 ## Evaluations
 
-The [evaluation harness and setup guide](evals/README.md), [plan suite](evals/plan/README.md),
+The [evaluation harness and setup guide](evals/README.md), [plan suite](evals/skills/plan/README.md),
 and [evaluation specifications](evals/specs/) live under `evals/`, along with all
 Node.js package metadata, dependencies, and development tooling.

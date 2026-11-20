@@ -158,7 +158,7 @@ export async function main(
 
   if (options.create) {
     const created = await createCase(
-      path.join(evalRoot, options.skillName),
+      path.join(evalRoot, 'skills', options.skillName),
       options.case!,
     );
 
@@ -171,7 +171,7 @@ export async function main(
 
   options.transport = transport;
   const agent = getAgent(options.agent);
-  const suite = path.join(evalRoot, options.skillName);
+  const suite = path.join(evalRoot, 'skills', options.skillName);
   const { previous, cliVersion } = await preflight(options, suite);
 
   const started = Date.now();
@@ -180,10 +180,10 @@ export async function main(
   const directory = path.join(suite, 'artifacts', runId);
   const inputs = path.join(directory, 'inputs');
   const archivedEvals = path.join(inputs, 'evals');
-  const archivedSuite = path.join(archivedEvals, options.skillName);
+  const archivedSuite = path.join(archivedEvals, 'skills', options.skillName);
 
   await copyTree(options.skill, path.join(inputs, 'skill'));
-  await fs.mkdir(archivedEvals, { recursive: true });
+  await fs.mkdir(archivedSuite, { recursive: true });
 
   await copyTree(
     path.join(HERE, 'grading'),

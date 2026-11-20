@@ -17,7 +17,7 @@ for (const name of ['shared', 'plan']) {
       });
       process.argv = [
         process.execPath,
-        path.join(EVALS, name === 'plan' ? 'plan/run.ts' : 'run.ts'),
+        path.join(EVALS, name === 'plan' ? 'skills/plan/run.ts' : 'run.ts'),
         ...(name === 'shared' ? ['plan'] : []),
         ...args,
       ];
@@ -25,7 +25,7 @@ for (const name of ['shared', 'plan']) {
 
       // When
       if (name === 'plan') {
-        await import('../plan/run.ts');
+        await import('../skills/plan/run.ts');
       } else {
         await import('../run.ts');
       }
@@ -49,7 +49,7 @@ for (const name of ['shared', 'plan']) {
     // When
     const act = async () => {
       if (name === 'plan') {
-        await import('../plan/run.ts');
+        await import('../skills/plan/run.ts');
       } else {
         await import('../run.ts');
       }

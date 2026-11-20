@@ -6,6 +6,6 @@ coverage/
 **/cases/
 **/fixtures/
 **/private/
-plan/grading/
+skills/*/grading/
 specs/
 pnpm-lock.yaml

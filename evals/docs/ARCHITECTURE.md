@@ -37,7 +37,7 @@ evals/
   run.ts                 Evaluation harness entry point
   lib/                   Evaluation harness implementation modules
   grading/               Shared judge rubric.md and quality.schema.json
-  <skill>/               An evaluation suite for a specific skill (see "Suite folder")
+  skills/<skill>/        An evaluation suite for a specific skill (see "Suite folder")
   tests/                 Evaluation harness tests
 ```
 
@@ -79,12 +79,12 @@ interrupted run still leaves partial results. Suite checks and calibration
 controls run from the live checkout even though their source files are also
 archived; rerunning from the archive alone does not reproduce those hooks.
 
-## Evaluation suite folder: `evals/<skill>/`
+## Evaluation suite folder: `evals/skills/<skill>/`
 
-A suite is named after the skill it evaluates (example `evals/plan/` for `skills/plan/`). The harness discovers everything by convention. Every evaluation suite needs at least one case defined as `cases/<id>/` and the following files included for each case: `prompt.md`, `expected.md` and `fixtures/`.
+A suite is named after the skill it evaluates (example `evals/skills/plan/` for `skills/plan/`). The harness discovers everything by convention. Every evaluation suite needs at least one case defined as `cases/<id>/` and the following files included for each case: `prompt.md`, `expected.md` and `fixtures/`.
 
 ```
-evals/<skill>/
+evals/skills/<skill>/
   README.md              Optional: Human guide to the suite.
   cases/<id>/            Required: At least one case.
     prompt.md            Required: The user request sent to the skill.
@@ -96,21 +96,21 @@ evals/<skill>/
   artifacts/<runId>/     Evaluation outputs.
 ```
 
-| Artifact             | Purpose and conventions                                                                                                                                                                                                                                                                                                           |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cases/<id>/`        | One scenario; `<id>` is the name passed to `--case`. Safe names only. No `.git`, symlinks or non-regular files.                                                                                                                                                                                                                   |
-| `prompt.md`          | The user request. The harness prepends the explicit `$<skill>` invocation. Write it as a real request; do not mention the checklist.                                                                                                                                                                                              |
-| `expected.md`        | Requirements the quality judge grades: one `- [id] text` each, indented lines continue it. IDs are stable and unique, since results and `--compare` key on them.                                                                                                                                                                  |
-| `fixtures/`          | Starting workspace, copied as-is and committed in a temp git repo. Mirror the layout the skill expects (e.g. `specs/…`). Fixture edits are allowed unless a suite-specific validator rejects them. Use `.gitkeep` for an empty fixtures directory.                                                                                |
-| `checks.ts`          | Optional deterministic checks (output files, schema, protected inputs). Export `checkCase`, which receives `{caseId, workspace, initialSnapshot, finalResponse}` and returns `{status: pass \| fail, failures[]}`. The result goes to the judge as evidence. `plan/checks.ts` holds the plan structure and protected-input rules. |
-| `judge-tests.ts`     | Optional known good and bad controls for `--calibrate`. Export `controls`; include flawed outputs that look plausible.                                                                                                                                                                                                            |
-| `grading/`           | Suite-specific rubric (`*.md`) and schema (`*.schema.json`) pair. The harness reads only the shared `evals/grading/` files, so these are not loaded today.                                                                                                                                                                        |
-| `run.ts`             | Thin wrapper calling the shared `main(['<skill>', …])` for `pnpm eval:<skill>`. Skill logic belongs in `checks.ts`.                                                                                                                                                                                                               |
-| `artifacts/<runId>/` | Output of one run; see [Artifacts](#artifacts). Never edit or commit.                                                                                                                                                                                                                                                             |
+| Artifact             | Purpose and conventions                                                                                                                                                                                                                                                                                                                  |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cases/<id>/`        | One scenario; `<id>` is the name passed to `--case`. Safe names only. No `.git`, symlinks or non-regular files.                                                                                                                                                                                                                          |
+| `prompt.md`          | The user request. The harness prepends the explicit `$<skill>` invocation. Write it as a real request; do not mention the checklist.                                                                                                                                                                                                     |
+| `expected.md`        | Requirements the quality judge grades: one `- [id] text` each, indented lines continue it. IDs are stable and unique, since results and `--compare` key on them.                                                                                                                                                                         |
+| `fixtures/`          | Starting workspace, copied as-is and committed in a temp git repo. Mirror the layout the skill expects (e.g. `specs/…`). Fixture edits are allowed unless a suite-specific validator rejects them. Use `.gitkeep` for an empty fixtures directory.                                                                                       |
+| `checks.ts`          | Optional deterministic checks (output files, schema, protected inputs). Export `checkCase`, which receives `{caseId, workspace, initialSnapshot, finalResponse}` and returns `{status: pass \| fail, failures[]}`. The result goes to the judge as evidence. `skills/plan/checks.ts` holds the plan structure and protected-input rules. |
+| `judge-tests.ts`     | Optional known good and bad controls for `--calibrate`. Export `controls`; include flawed outputs that look plausible.                                                                                                                                                                                                                   |
+| `grading/`           | Suite-specific rubric (`*.md`) and schema (`*.schema.json`) pair. The harness reads only the shared `evals/grading/` files, so these are not loaded today.                                                                                                                                                                               |
+| `run.ts`             | Thin wrapper calling the shared `main(['<skill>', …])` for `pnpm eval:<skill>`. Skill logic belongs in `checks.ts`.                                                                                                                                                                                                                      |
+| `artifacts/<runId>/` | Output of one run; see [Artifacts](#artifacts). Never edit or commit.                                                                                                                                                                                                                                                                    |
 
 ## Evaluation artifacts
 
-Everything is under `evals/<skill>/artifacts/<runId>/`.
+Everything is under `evals/skills/<skill>/artifacts/<runId>/`.
 
 ```
 results.json  report.md  baseline.json

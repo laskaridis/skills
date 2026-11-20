@@ -2,7 +2,7 @@
 .claude/
 .worktrees/
 skills-lock.json
-/evals/*/artifacts/
+/evals/skills/*/artifacts/
 /evals/node_modules/
 /evals/coverage/
 /evals/.pnpm-store/
