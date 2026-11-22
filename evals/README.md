@@ -38,7 +38,8 @@ The runner prints `Artifacts:` with the run directory, then the path to
 files, and judge evidence.
 
 A live run sends the skill and case evidence to the model service and consumes
-your usage: each case makes one agent call and one judge call. Allow several
+your usage: each case makes one agent call and one judge call, and `--calibrate`
+adds one judge call per control. Allow several
 minutes.
 
 Offline checks (`pnpm test`, lint, typecheck) need no credentials. CI runs them
