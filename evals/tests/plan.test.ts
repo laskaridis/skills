@@ -5,11 +5,19 @@ import path from 'node:path';
 import { temporary, put, EVALS } from './helpers.ts';
 import { snapshot } from '../lib/utils.ts';
 import { checkCase, checkStructure } from '../skills/plan/checks.ts';
-import { degradedPlan, controls } from '../skills/plan/judge-tests.ts';
+import {
+  degradedPlan,
+  goodDesign,
+  goodPlan,
+  overLayeredDesign,
+  controls,
+} from '../skills/plan/judge-tests.ts';
 import { loadCases } from '../lib/cases.ts';
 import { validateControls } from '../lib/loader.ts';
 
 const SPEC = 'specs/seat-reservation.spec.md';
+
+const ARCHITECTURE = 'ARCHITECTURE.md';
 
 const DESIGN = 'specs/seat-reservation.design.md';
 
@@ -23,6 +31,14 @@ async function setup(t: import('vitest').TestContext) {
     SPEC,
     await fs.readFile(
       path.join(EVALS, 'skills/plan/cases/complete/fixtures', SPEC),
+    ),
+  );
+
+  await put(
+    root,
+    ARCHITECTURE,
+    await fs.readFile(
+      path.join(EVALS, 'skills/plan/cases/complete/fixtures', ARCHITECTURE),
     ),
   );
   const initial = await snapshot(root);
@@ -64,6 +80,54 @@ test('plan controls satisfy structure while encoding deliberate semantic failure
   assert.doesNotThrow(() => validateControls(controls, cases));
 });
 
+test('good plan passes structure next to a nonempty design', async (t) => {
+  // Given
+  const { root, initial } = await setup(t);
+
+  await put(root, DESIGN, goodDesign());
+
+  // When
+  const result = await check(root, initial, goodPlan());
+
+  // Then
+  assert.deepEqual(result.failures, []);
+  assert.equal(result.status, 'pass');
+});
+
+test('plan validator accepts the exact expected context document', async (t) => {
+  // Given
+  const { root, initial, plan } = await setup(t);
+
+  // When
+  const result = await check(root, initial, plan);
+
+  // Then
+  assert.deepEqual(result.failures, []);
+  assert.equal(result.status, 'pass');
+});
+
+test('over-layered control pairs the good plan with an over-layered design that fails only simplicity', () => {
+  // Given
+  const control = controls.find((c) => c.id === 'over-layered-design');
+
+  // When
+  const failing = Object.entries(control?.expected ?? {})
+    .filter(([, status]) => status === 'fail')
+    .map(([id]) => id);
+
+  // Then
+  assert.equal(controls.length, 2);
+
+  assert.deepEqual(failing, ['design_simplicity']);
+
+  assert.equal(
+    control?.generatedFiles[PLAN],
+    JSON.stringify(goodPlan(), null, 2),
+  );
+  assert.equal(control?.generatedFiles[DESIGN], overLayeredDesign());
+  assert.notEqual(overLayeredDesign(), goodDesign());
+});
+
 const mutations: Record<string, (plan: any) => unknown> = {
   null: () => null,
   array: () => [],
@@ -74,11 +138,23 @@ const mutations: Record<string, (plan: any) => unknown> = {
   contextNull: (p) => ({ ...p, context_documents: [null] }),
   contextBad: (p) => ({
     ...p,
-    context_documents: [{ path: SPEC, purpose: '' }],
+    context_documents: [{ path: ARCHITECTURE, purpose: '' }],
   }),
-  contextValid: (p) => ({
+  contextWrongPath: (p) => ({
     ...p,
     context_documents: [{ path: SPEC, purpose: 'Context' }],
+  }),
+  contextExtraEntry: (p) => ({
+    ...p,
+    context_documents: [
+      ...p.context_documents,
+      { path: SPEC, purpose: 'Context' },
+    ],
+  }),
+  contextEmptyList: (p) => ({ ...p, context_documents: [] }),
+  contextExtraKey: (p) => ({
+    ...p,
+    context_documents: [{ ...p.context_documents[0], extra: true }],
   }),
   tasksType: (p) => ({ ...p, tasks: {} }),
   tasksEmpty: (p) => ({ ...p, tasks: [] }),
@@ -234,6 +310,13 @@ test('ambiguous case passes only when the workspace is left untouched', async (t
     SPEC,
     await fs.readFile(
       path.join(EVALS, 'skills/plan/cases/complete/fixtures', SPEC),
+    ),
+  );
+  await put(
+    untouched,
+    ARCHITECTURE,
+    await fs.readFile(
+      path.join(EVALS, 'skills/plan/cases/complete/fixtures', ARCHITECTURE),
     ),
   );
 

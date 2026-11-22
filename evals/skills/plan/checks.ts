@@ -12,6 +12,8 @@ import {
 
 const SPEC = 'specs/seat-reservation.spec.md';
 
+const ARCHITECTURE = 'ARCHITECTURE.md';
+
 const DESIGN = 'specs/seat-reservation.design.md';
 
 const PLAN = 'specs/seat-reservation.plan.json';
@@ -93,16 +95,22 @@ export async function checkStructure(
   if (!Array.isArray(plan.context_documents)) {
     fail('context_documents must be an array');
   } else {
-    // Neither fixture designates supporting context documents.
-    if (plan.context_documents.length) {
-      fail('No supporting context documents were designated by the user');
+    // The user prompt designates ARCHITECTURE.md as the only context document.
+    const entries = plan.context_documents;
+    const [entry] = entries;
+
+    if (
+      entries.length !== 1 ||
+      !exactKeys(entry, ['path', 'purpose']) ||
+      entry.path !== ARCHITECTURE ||
+      !nonempty(entry.purpose)
+    ) {
+      fail(
+        `context_documents must be exactly one entry with path ${ARCHITECTURE} and a nonempty purpose`,
+      );
     }
 
-    for (const doc of plan.context_documents) {
-      if (!exactKeys(doc, ['path', 'purpose']) || !nonempty(doc.purpose)) {
-        fail('Invalid context document entry');
-      }
-
+    for (const doc of entries) {
       docs.push(doc?.path);
     }
   }
