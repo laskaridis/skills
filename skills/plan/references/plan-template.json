@@ -1,0 +1,31 @@
+  {
+    "specification_document": "<path to the specification file relative to current repo root>",
+    "design_document": "<path to the design file relative to current repo root>",
+    "context_documents": [
+      {
+        "path": "<path to a supporting file relative to current repo root>",
+        "purpose": "<one sentence describing the document's purpose>"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "TASK-001",
+        "objective": "<1 sentence description of what needs to be accomplished (what is the observable outcome)>",
+        "status": "<pending|completed>",
+        "stories_enabled": [
+          "<the id of the user story enabled by this task>"
+        ],
+        "acceptance_criteria_addressed": [
+          "<the id of the functional or non-functional acceptance criterion this task enables>"
+        ],
+        "completion_criteria": [
+          "<task specific conditions that must be true for the task to be considered complete>",
+          "<do not copy the acceptance criteria from the specification here>"
+        ],
+        "constraints": [
+          "<optionally, a description of anything critical that must constrain this implementation>"
+        ],
+        "dependencies": []
+      }
+    ]
+  }
