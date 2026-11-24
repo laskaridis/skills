@@ -2,7 +2,7 @@ import type { Control } from '../../lib/types.ts';
 import { SPEC } from './checks.ts';
 
 // Calibration checks both judge false negatives and false positives.
-// The negative specimen combines all six defects to minimize model calls.
+// The negative specimen combines all seven defects to minimize model calls.
 export const goldenSpec = `# Feature Specification: Workshop RSVP
 
 ## Purpose / Big Picture
@@ -59,7 +59,8 @@ As a member, I want to cancel my own active reservation before the workshop star
 
 ## Clarifications needed
 
-None.
+- **Dashboard "My workshops" list:** Support asked that a reserved workshop appear in the dashboard's "My workshops" list right after reserving, while the platform team said the dashboard must not change in this release. These positions conflict, so this spec defines no dashboard behavior until the product owner decides.
+- **Concurrent reservation limit:** It is unanswered whether a member should be limited in how many workshops they can hold reservations for at the same time. This spec imposes no limit until the community team answers.
 `;
 
 function replaceOnce(value: string, from: string, to: string): string {
@@ -162,11 +163,18 @@ function makeDefectiveSpec(): string {
   );
 
   // Drop the implicit signed-in-session assumption.
-  return between(
+  spec = between(
     spec,
     '## Assumptions',
     '## Out of Scope',
     '## Assumptions\n\nNone.\n\n',
+  );
+
+  // Silently drop both unresolved items instead of flagging them.
+  return replaceOnce(
+    spec,
+    spec.slice(spec.indexOf('## Clarifications needed')),
+    '## Clarifications needed\n\nNone.\n',
   );
 }
 
@@ -177,6 +185,7 @@ const ids = [
   'superseded_decisions',
   'out_of_scope',
   'captured_assumptions',
+  'clarifications_flagged',
 ];
 
 function statuses(...failing: string[]): Control['expected'] {

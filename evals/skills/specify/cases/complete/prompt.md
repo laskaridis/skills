@@ -29,8 +29,14 @@ The following is the ordered Q&A between the product owner (User) and the discov
 **Agent:** Should RSVP confirmation trigger an email, and should we build workshop administration?
 **User:** Email confirmations and reminders are **out of scope**. Workshop publishing and editing already exist and are not part of this change. Don't introduce payment, ticketing, or other capabilities.
 
-**Agent:** Any open questions that would change these behaviors?
-**User:** No. Use the behavior we agreed on. The implementation can choose normal internal details.
+**Agent:** Does the member dashboard need to change?
+**User:** Support asked that a workshop appear in the dashboard's "My workshops" list right after the member reserves it. The platform team said the dashboard must not change in this release because another team owns it.
+
+**Agent:** Should a member be limited in how many workshops they can hold reservations for at the same time?
+**User:** Good question. I don't have an answer yet; I need to check with the community team.
+
+**Agent:** Anything else that would change these behaviors?
+**User:** No. Use the behavior we agreed on for everything else. The implementation can choose normal internal details.
 
 # Current request
 
