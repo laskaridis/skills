@@ -14,10 +14,11 @@ describes the existing application. This does **not** test multi-turn memory.
 The skill is asked to write only `specs/workshop-rsvp.spec.md`. The
 [check](checks.ts) requires that exact, nonempty, ordinary file, unchanged
 inputs, and no other outputs. The [judge checklist](cases/complete/expected.md)
-assesses seven independent semantic properties: scope completeness, verifiable
+assesses eight independent semantic properties: scope completeness, verifiable
 acceptance criteria, vertical stories, superseded decisions, out-of-scope
-capture, implicit assumptions, and flagging the two open items under
-"Clarifications needed" instead of silently resolving them.
+capture, implicit assumptions, flagging the two open items under
+"Clarifications needed" instead of silently resolving them, and avoiding
+implementation details.
 
 ## Run
 
@@ -29,9 +30,9 @@ pnpm eval specify --model YOUR_MODEL --case complete --calibrate
 ```
 
 The two [calibration controls](judge-tests.ts) include one fully correct
-reference spec (all seven criteria pass) and one combined defective spec (all
-seven criteria fail). They run with `--calibrate` and consume two additional judge
-calls instead of eight. Check for `grader_disagreement` in the report. Because
+reference spec (all eight criteria pass) and one combined defective spec (all
+eight criteria fail). They run with `--calibrate` and consume two additional judge
+calls instead of nine. Check for `grader_disagreement` in the report. Because
 all defects are combined, failures identify misgraded criteria but do not isolate
 a specific defect; these controls do not establish judge accuracy or reproducibility.
 A live evaluation and calibration require an authenticated Codex or Claude CLI.

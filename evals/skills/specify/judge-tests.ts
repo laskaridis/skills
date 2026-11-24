@@ -2,7 +2,7 @@ import type { Control } from '../../lib/types.ts';
 import { SPEC } from './checks.ts';
 
 // Calibration checks both judge false negatives and false positives.
-// The negative specimen combines all seven defects to minimize model calls.
+// The negative specimen combines all eight defects to minimize model calls.
 export const goldenSpec = `# Feature Specification: Workshop RSVP
 
 ## Purpose / Big Picture
@@ -170,6 +170,13 @@ function makeDefectiveSpec(): string {
     '## Assumptions\n\nNone.\n\n',
   );
 
+  // Prescribe a concrete technical design instead of behavior.
+  spec = replaceOnce(
+    spec,
+    'Competing requests for the last seat cannot both succeed.',
+    'Competing requests for the last seat cannot both succeed: store reservations in a `reservations` table with a unique index on (member_id, workshop_id) and lock the workshop row with SELECT ... FOR UPDATE inside a transaction.',
+  );
+
   // Silently drop both unresolved items instead of flagging them.
   return replaceOnce(
     spec,
@@ -186,6 +193,7 @@ const ids = [
   'out_of_scope',
   'captured_assumptions',
   'clarifications_flagged',
+  'no_implementation_details',
 ];
 
 function statuses(...failing: string[]): Control['expected'] {
