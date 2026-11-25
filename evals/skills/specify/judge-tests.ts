@@ -2,7 +2,9 @@ import type { Control } from '../../lib/types.ts';
 import { SPEC } from './checks.ts';
 
 // Calibration checks both judge false negatives and false positives.
-// The negative specimen combines all eight defects to minimize model calls.
+// The combined negative specimen packs seven defects into one spec to minimize
+// model calls. The structural defect (no stories) is incompatible with the
+// story-level defects, so it gets its own specimen.
 export const goldenSpec = `# Feature Specification: Workshop RSVP
 
 ## Purpose / Big Picture
@@ -85,6 +87,55 @@ function between(
   }
 
   return value.slice(0, start) + replacement + value.slice(finish);
+}
+
+// Same behavior as the golden spec, but organized as requirements grouped by
+// theme with all scenarios pooled in one section and no user stories.
+function makeFlatSpec(): string {
+  return between(
+    goldenSpec,
+    '## User stories',
+    '## Assumptions',
+    [
+      '## Requirements',
+      '',
+      '### Display',
+      '',
+      '- **R1:** The detail page shows remaining seats, calculated as capacity minus active reservations, and the viewing member\'s status ("Reserved" or "Not reserved"). Both reflect current reservations on each visit and after each action, and remain displayed after the start instant.',
+      '',
+      '### Reserving',
+      '',
+      '- **R2:** A member can hold at most one active reservation per workshop. Reserving before the start adds one active reservation.',
+      '- **R3:** A repeated reservation stays "Reserved", including when full, and uses no extra seat.',
+      '- **R4:** A first-time request on a full workshop returns "Fully booked" with no change.',
+      '- **R5:** When two members compete for the last seat, exactly one succeeds and remaining seats never goes below zero.',
+      '',
+      '### Cancelling',
+      '',
+      '- **R6:** A member can cancel their own active reservation before the start, releasing one seat. Repeated cancellation releases no further seat.',
+      '- **R7:** A member can reserve again before the start if a seat remains.',
+      "- **R8:** A member cannot cancel another member's reservation.",
+      '',
+      '### Start time',
+      '',
+      '- **R9:** At or after the exact start instant, reserving and cancelling return "Registration closed" with no change.',
+      '',
+      '## Acceptance scenarios',
+      '',
+      '- **S1:** Given capacity 3 and one active reservation, when an unreserved member opens the page, then remaining seats is 2 and status is "Not reserved".',
+      '- **S2:** Given capacity 3 and one active reservation, when another member reserves before the start, then they are "Reserved" and remaining seats is 1.',
+      '- **S3:** Given a member with an active reservation on a full workshop, when they reserve again, then they stay "Reserved" and remaining seats is unchanged.',
+      '- **S4:** Given zero remaining seats and an unreserved member, when they reserve, then the result is "Fully booked" with no change.',
+      '- **S5:** Given one seat left and two unreserved members, when both reserve concurrently, then exactly one is "Reserved", the other gets "Fully booked", and remaining seats is 0.',
+      '- **S6:** Given an active reservation, when the member cancels before the start, then they are "Not reserved" and remaining seats increases by one.',
+      '- **S7:** Given a cancelled reservation, when the member cancels again, then no further seat is released.',
+      "- **S8:** Given another member's active reservation, when a different member tries to cancel it, then it is unchanged.",
+      '- **S9:** Given a cancelled reservation and a free seat before the start, when the member reserves again, then they are "Reserved" and remaining seats decreases by one.',
+      '- **S10:** Given the exact start instant, when a member reserves or cancels, then the result is "Registration closed" with no change.',
+      '- **S11:** Given the start instant has passed, when a member opens the page, then remaining seats and their status are still displayed.',
+      '',
+    ].join('\n'),
+  );
 }
 
 function makeDefectiveSpec(): string {
@@ -215,4 +266,10 @@ function control(id: string, generated: string, ...failing: string[]): Control {
 export const controls: Control[] = [
   control('correct-spec', goldenSpec),
   control('combined-defects', makeDefectiveSpec(), ...ids),
+  control(
+    'flat-requirements',
+    makeFlatSpec(),
+    'verifiable_stories',
+    'vertical_stories',
+  ),
 ];
