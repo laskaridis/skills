@@ -128,6 +128,19 @@ test('over-layered control pairs the good plan with an over-layered design that 
   assert.notEqual(overLayeredDesign(), goodDesign());
 });
 
+test('degraded control expects only design and plan consistency to pass', () => {
+  // Given
+  const control = controls.find((c) => c.id === 'degraded-plan');
+
+  // When
+  const passing = Object.entries(control?.expected ?? {})
+    .filter(([, status]) => status === 'pass')
+    .map(([id]) => id);
+
+  // Then
+  assert.deepEqual(passing, ['design_plan_consistent']);
+});
+
 const mutations: Record<string, (plan: any) => unknown> = {
   null: () => null,
   array: () => [],

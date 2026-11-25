@@ -52,16 +52,30 @@ export function degradedPlan() {
 }
 
 const REQUIREMENTS = [
-  'intent_fidelity',
-  'design_drivers_and_decisions',
-  'design_boundaries',
-  'design_document_contract',
-  'design_change_resilience',
+  'covers_reservation',
+  'covers_cancellation',
+  'covers_testability',
+  'no_unsupported_scope',
+  'design_plan_consistent',
+  'drivers_have_consequences',
+  'decisions_have_rationale',
+  'risks_have_mitigation',
+  'module_responsibilities',
+  'state_and_atomicity_ownership',
+  'policy_change_local',
+  'time_rule_testable',
+  'storage_hidden',
+  'incremental_evolution',
   'design_coupling_cohesion',
   'design_simplicity',
-  'verifiability',
-  'actionability',
-  'dependency_correctness',
+  'criteria_concrete_per_task',
+  'edge_cases_verified',
+  'tasks_cohesive_slices',
+  'not_overprescribed',
+  'required_edges_present',
+  'no_spurious_edges',
+  'risky_work_early',
+  'design_document_contract',
 ];
 
 const DRIVERS = `## References
@@ -132,13 +146,13 @@ export function overLayeredDesign() {
 ${DRIVERS}
 ## Key decisions and trade-offs
 
-- A reservation facade is the only entry point and holds the atomic step: it decides the outcome from consistent state and applies the whole change as one step, so failures never mutate state.
-- Reservation records and seat counts live behind a repository abstraction with a pluggable storage interface, for flexibility; the in-memory implementation is the only one provided.
-- Capacity, duplicate and event-start rules are expressed as interchangeable policy strategies behind a policy layer, for extensibility, with one default strategy each.
-- The facade publishes internal reservation-created and reservation-cancelled events on an internal event bus, so future components can react without changing the facade, for extensibility; there are no subscribers today.
-- Current time comes from an injected time source read once per operation, so tests set exact boundaries.
-- Reservations are never reused: cancelled reservations stay as history and a rebooking creates a fresh ID.
-- Outcomes are returned as values from a closed set of success states and the stable error codes EVENT_NOT_FOUND, EVENT_STARTED, CAPACITY_EXCEEDED and RESERVATION_NOT_FOUND.
+- A reservation facade is the only entry point and holds the atomic step: it decides the outcome from consistent state and applies the whole change as one step, so failures never mutate state; the trade-off is that every call goes through the facade.
+- Reservation records and seat counts live behind a repository abstraction with a pluggable storage interface, for flexibility; the trade-off is an extra contract with the in-memory implementation as the only one provided.
+- Capacity, duplicate and event-start rules are expressed as interchangeable policy strategies behind a policy layer, for extensibility, with one default strategy each; the trade-off is that the rules are spread across strategies.
+- The facade publishes internal reservation-created and reservation-cancelled events on an internal event bus, so future components can react without changing the facade, for extensibility; the trade-off is an extra delivery step with no subscribers today.
+- Current time comes from an injected time source read once per operation, so tests set exact boundaries; the trade-off is that callers must always provide a time source.
+- Reservations are never reused: cancelled reservations stay as history and a rebooking creates a fresh ID, so history stays accurate; the trade-off is that cancelled records remain in memory.
+- Outcomes are returned as values from a closed set of success states and the stable error codes EVENT_NOT_FOUND, EVENT_STARTED, CAPACITY_EXCEEDED and RESERVATION_NOT_FOUND, so callers can distinguish them; the trade-off is that callers must check every result.
 
 ## Module changes
 
@@ -357,19 +371,14 @@ export const controls: Control[] = [
         '# Design\nAn in-memory reservation service with a waitlist and email delivery. Cancellation tests ship before creation capability.',
     },
     finalResponse: 'The design and plan are finalized.',
+    // The design and plan are both bad but agree with each other (waitlist,
+    // email, cancellation checks before creation), so only their consistency
+    // is expected to pass.
     expected: Object.fromEntries(
-      [
-        'intent_fidelity',
-        'design_drivers_and_decisions',
-        'design_boundaries',
-        'design_document_contract',
-        'design_change_resilience',
-        'design_coupling_cohesion',
-        'design_simplicity',
-        'verifiability',
-        'actionability',
-        'dependency_correctness',
-      ].map((id) => [id, 'fail' as const]),
+      REQUIREMENTS.map((id) => [
+        id,
+        id === 'design_plan_consistent' ? ('pass' as const) : ('fail' as const),
+      ]),
     ),
   },
   {

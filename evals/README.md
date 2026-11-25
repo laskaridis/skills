@@ -103,7 +103,7 @@ separate questions:
 | Judge execution | Did the judge return valid findings? `invalid_response`, `timeout`, `execution_error` are judge problems.                         |
 | Requirements    | Each expectation is `pass`, `fail`, or `ungradable` (evidence missing, unusable, or lost to an execution problem), with evidence. |
 
-`execution: ok`, `checks: pass`, `judge: ok`, `intent_fidelity: fail` means the
+`execution: ok`, `checks: pass`, `judge: ok`, `covers_reservation: fail` means the
 experiment ran fine and found a quality problem. A successful judge call does not
 mean the agent passed. Read the cited evidence before acting.
 

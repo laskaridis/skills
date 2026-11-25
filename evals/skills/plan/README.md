@@ -27,10 +27,10 @@ context, so `--no-skill` runs know which artifacts to deliver. It leaves their
 structure and content to the agent. The case therefore does not test whether the
 skill produces a design, or chooses those filenames, unprompted.
 
-| Case        | Spec                               | Expected outcome                                                                                                                                                                                                                                                                      |
-| ----------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `complete`  | Full feature                       | Design and plan satisfy ten requirements: `intent_fidelity`, `design_drivers_and_decisions`, `design_boundaries`, `design_document_contract`, `design_change_resilience`, `design_coupling_cohesion`, `design_simplicity`, `verifiability`, `actionability`, `dependency_correctness` |
-| `ambiguous` | Late cancellation policy left open | Single turn. Asks a specific late-cancellation policy question, including repeat cancellation. Presents no final design or plan (`clarification_policy`). Leaves the workspace untouched (no new files, inputs unchanged)                                                             |
+| Case        | Spec                               | Expected outcome                                                                                                                                                                                                                                  |
+| ----------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `complete`  | Full feature                       | Design and plan satisfy the 24 requirements listed under [Judge](#judge)                                                                                                                                                                          |
+| `ambiguous` | Late cancellation policy left open | Single turn. Asks a specific late-cancellation policy question, including repeat cancellation (`asks_policy_question`). Presents no final design or plan (`no_premature_output`). Leaves the workspace untouched (no new files, inputs unchanged) |
 
 ## Deterministic checks
 
@@ -69,20 +69,33 @@ qualifications.
 For `complete`, the judge reads both the design document and the plan against
 the spec:
 
-- `intent_fidelity` covers behavior across both artifacts, with no unsupported
-  additions such as a waitlist or notifications.
-- `design_drivers_and_decisions`, `design_boundaries`,
-  `design_document_contract`, `design_change_resilience`,
-  `design_coupling_cohesion` and `design_simplicity` assess the design
-  document: drivers with architectural consequences, risks, module
-  responsibilities and interfaces, template conformance, whether the
-  boundaries support change (locality, information hiding, testability,
-  incremental evolution), whether modules are cohesive with explicit,
-  acyclic dependencies on stable contracts, and whether the design is no larger
-  than the in-process, in-memory feature needs. They judge the observable design
-  and do not require a self-evaluation transcript.
-- `verifiability`, `actionability` and `dependency_correctness` assess the
-  plan's tasks.
+- Behavior, across both artifacts: `covers_reservation`,
+  `covers_cancellation`,
+  `covers_testability`,
+  `no_unsupported_scope`,
+  `design_plan_consistent`.
+- Design: `drivers_have_consequences`,
+  `decisions_have_rationale`,
+  `risks_have_mitigation`,
+  `module_responsibilities`,
+  `state_and_atomicity_ownership`,
+  `policy_change_local`,
+  `time_rule_testable`,
+  `storage_hidden`,
+  `incremental_evolution`,
+  `design_coupling_cohesion`,
+  `design_simplicity`. These judge the observable design and do not require a
+  self-evaluation transcript.
+- Plan tasks: `criteria_concrete_per_task`,
+  `edge_cases_verified`,
+  `tasks_cohesive_slices`,
+  `not_overprescribed`,
+  `required_edges_present`,
+  `no_spurious_edges`,
+  `risky_work_early`.
+- Output contract: `design_document_contract`, the only requirement that assesses
+  conformance to the skill's template. The others accept the content in any
+  section or format of the generated files.
 
 It accepts alternative architectures, module counts, task counts, and
 decompositions. It allows essential atomic-consistency and deterministic-test
@@ -106,7 +119,8 @@ criterion, plus a one-paragraph design. Their content:
 - orders verification before prerequisites
 - has a design with no drivers, decisions, risks, or module boundaries
 
-All ten requirements are expected to fail.
+All requirements are expected to fail except `design_plan_consistent`: the two
+artifacts are bad but agree with each other.
 
 `over-layered-design` pairs a good plan (`goodPlan()`) with a design that is
 complete and well formed but adds speculative layers the spec does not require:
@@ -115,7 +129,7 @@ policy/strategy layer, and an internal event bus with no subscribers, each
 justified only by flexibility or extensibility. State ownership, the atomic
 coordination boundary, the preloaded event data and the time source stay
 identifiable, and the policy layer's input view has a defined contract. Only
-`design_simplicity` is expected to fail; the other nine are expected to pass. It
+`design_simplicity` is expected to fail; the other 23 are expected to pass. It
 shows the judge passes a good plan and a clear, well-formed design, and fails an
 over-engineered one for its content rather than for missing structure. Every
 dependency in the design is explicit and every responsibility described, so
