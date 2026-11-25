@@ -20,10 +20,12 @@ Each case has `fixtures/specs/seat-reservation.spec.md` and a
 `fixtures/ARCHITECTURE.md` (identical across cases) holding the project's
 standing conventions (language, concurrency, errors, time, testing, design).
 It closes technical questions without prescribing this feature's modules. The `ambiguous` `prompt.md` is the single line
-`Produce a plan for specs/seat-reservation.spec.md`; the `complete` prompt adds
-`Use ARCHITECTURE.md as additional context.` The harness
-invokes the skill, so the skill decides to write a design document and a task
-plan, not an implementation.
+`Produce an implementation plan for specs/seat-reservation.spec.md`. The
+`complete` prompt asks for a design document and a task plan saved alongside the
+spec under the filenames the checks expect, with `ARCHITECTURE.md` as additional
+context, so `--no-skill` runs know which artifacts to deliver. It leaves their
+structure and content to the agent. The case therefore does not test whether the
+skill produces a design, or chooses those filenames, unprompted.
 
 | Case        | Spec                               | Expected outcome                                                                                                                                                                                                                                                                      |
 | ----------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

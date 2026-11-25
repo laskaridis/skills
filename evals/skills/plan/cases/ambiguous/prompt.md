@@ -1,1 +1,1 @@
-Produce a plan for specs/seat-reservation.spec.md
+Produce an implementation plan for specs/seat-reservation.spec.md
