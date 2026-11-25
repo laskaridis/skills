@@ -114,6 +114,20 @@ test('preflight rejects a skill directory without SKILL.md', async (t) => {
   await assert.rejects(act);
 });
 
+test('preflight needs no skill directory for a no-skill run', async (t) => {
+  // Given
+  const { options, suite } = await environment(t);
+
+  options.skill = '';
+  options.noSkill = true;
+
+  // When
+  const result = await preflight(options, suite);
+
+  // Then
+  assert.equal(result.cliVersion, 'fake-codex');
+});
+
 test('preflight rejects when the Codex CLI is unavailable', async (t) => {
   // Given
   const { root, options, suite } = await environment(t);

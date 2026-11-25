@@ -65,6 +65,7 @@ TypeScript through Node's native type stripping, so there is no build step.
 | `--model MODEL`            | Agent model. Required for live runs.                                                                                                                       |
 | `--case CASE_ID`           | Run one case instead of all.                                                                                                                               |
 | `--skill DIR`              | Load the skill from `DIR` (must contain `SKILL.md`) instead of `skills/<skill>`.                                                                           |
+| `--no-skill`               | Baseline run: the skill is neither installed nor invoked. `<skill>` still selects the suite. Cannot be combined with `--skill`.                            |
 | `--judge-model MODEL`      | Judge model. Defaults to the agent's model.                                                                                                                |
 | `--reasoning EFFORT`       | Agent reasoning effort. Defaults to `high`; use a value your model supports.                                                                               |
 | `--judge-reasoning EFFORT` | Judge reasoning effort. Defaults to the agent's.                                                                                                           |
@@ -168,6 +169,37 @@ recorded `harness_git` state: a limitation is reported when the commits differ,
 when either run had a dirty working tree (the commit then does not identify the
 harness code), or when the revision is unknown or missing (for example, results
 recorded before it existed). Only version-2 results are accepted.
+
+## Measuring the skill's value
+
+Run the same model, cases, checks, and judge without the skill, then compare a
+normal run with that baseline:
+
+```sh
+pnpm eval plan --model YOUR_MODEL --no-skill
+
+pnpm eval plan --model YOUR_MODEL \
+  --compare skills/plan/artifacts/NO_SKILL_RUN_ID/results.json
+```
+
+The agent receives the unmodified `prompt.md` in a workspace holding only the
+fixtures. `results.json` records `skill_mode: none` and `skill_hash: none`, and
+the comparison says that it is a with/without-skill comparison. Results without
+a `skill_mode` count as `installed`.
+
+Before reading a difference as the skill's value, check that:
+
+- **The skill is not installed for your user.** Claude's
+  `--setting-sources project` keeps user skills and user-installed plugins out,
+  even with an inherited config directory. Codex still discovers skills in
+  `$HOME/.agents/skills` despite `--ignore-user-config` and the temporary
+  `CODEX_HOME`, so remove the evaluated skill from there first. Skills bundled
+  with a CLI stay available in both modes.
+- **The case does not depend on the skill.** Prompts are sent as written: the
+  `specify` case asks the agent to use the specify skill and its template, which
+  do not exist in a no-skill run. Checks may also test a format only the skill
+  describes, such as the `plan` design path and JSON fields, so `checks` failures
+  can reflect an unstated contract rather than lower quality.
 
 ## Next steps
 

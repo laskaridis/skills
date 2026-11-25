@@ -408,3 +408,77 @@ for (const [side, previous, current] of [
     assert.ok(limitations[0].includes(`unknown for the ${side} run`));
   });
 }
+
+test('reports identify a no-skill run instead of a skill hash', () => {
+  // Given
+  const value = run();
+
+  value.skill_hash = 'none';
+  value.settings.skill_mode = 'none';
+
+  // When
+  const text = report(value);
+
+  // Then
+  assert.ok(
+    text.includes(
+      'Skill: none (baseline run, skill not installed or invoked).',
+    ),
+  );
+  assert.ok(!text.includes('Skill SHA-256'));
+});
+
+const runWithSkillMode = (skillMode?: string) => {
+  const value = run();
+
+  if (skillMode) {
+    value.settings.skill_mode = skillMode;
+  }
+
+  return value;
+};
+
+for (const [previous, current, expected] of [
+  ['none', 'installed', 'baseline ran without the skill, current ran with it'],
+  ['none', undefined, 'baseline ran without the skill, current ran with it'],
+  ['installed', 'none', 'baseline ran with the skill, current ran without it'],
+  [undefined, 'none', 'baseline ran with the skill, current ran without it'],
+] as const) {
+  test(`comparison of skill mode ${previous} to ${current} is labelled as with/without skill`, () => {
+    // Given
+    const before = runWithSkillMode(previous);
+    const after = runWithSkillMode(current);
+
+    // When
+    const { limitations } = compareResults(before, after);
+
+    // Then
+    assert.ok(
+      limitations.includes(
+        `With/without-skill comparison: ${expected}; changes reflect the skill's presence, not an edit to it`,
+      ),
+    );
+    assert.ok(limitations.includes('Runtime settings differ'));
+  });
+}
+
+for (const [previous, current] of [
+  [undefined, undefined],
+  [undefined, 'installed'],
+  ['installed', undefined],
+  ['installed', 'installed'],
+  ['none', 'none'],
+] as const) {
+  test(`comparison of skill mode ${previous} to ${current} adds no limitation`, () => {
+    // Given
+    const before = runWithSkillMode(previous);
+    const after = runWithSkillMode(current);
+
+    // When
+    const { limitations } = compareResults(before, after);
+
+    // Then
+    assert.ok(!limitations.some((x) => x.includes('skill')));
+    assert.ok(!limitations.includes('Runtime settings differ'));
+  });
+}

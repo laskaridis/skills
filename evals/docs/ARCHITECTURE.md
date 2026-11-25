@@ -73,6 +73,9 @@ CLI args
                        exit 2 if infrastructureFailure()
 ```
 
+With `--no-skill` the skill is neither copied nor invoked: the workspace holds
+only fixtures and the prompt is `prompt.md` alone (`skill_mode: none`).
+
 `results.json` and `report.md` are rewritten after every case, so an
 interrupted run still leaves partial results. Suite checks and calibration
 controls run from the live checkout; the run folder holds no copy of them.

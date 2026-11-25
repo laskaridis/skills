@@ -36,7 +36,10 @@ async function suiteOnDisk(t: import('vitest').TestContext) {
   };
 }
 
-async function liveRun(t: import('vitest').TestContext) {
+async function liveRun(
+  t: import('vitest').TestContext,
+  overrides: Partial<RunOptions> = {},
+) {
   const disk = await suiteOnDisk(t);
   const { options } = await fixture(t);
   const runOptions: RunOptions = {
@@ -47,6 +50,7 @@ async function liveRun(t: import('vitest').TestContext) {
     model: 'model-x',
     judgeModel: 'judge-x',
     case: 'a-first',
+    ...overrides,
   };
 
   return {
@@ -80,6 +84,30 @@ test('buildRunResults records identity, selection and settings of the run', asyn
   assert.equal(results.settings.judge_model, 'judge-x');
   assert.equal(results.settings.cli_version, 'cli-1');
   assert.equal(results.settings.runs_per_case, 1);
+});
+
+test('buildRunResults records that the skill was installed', async (t) => {
+  // Given
+  const { build } = await liveRun(t);
+
+  // When
+  const results = await build();
+
+  // Then
+  assert.equal(results.settings.skill_mode, 'installed');
+  assert.match(results.skill_hash!, /^[0-9a-f]{64}$/);
+});
+
+test('buildRunResults records a no-skill run without hashing a skill', async (t) => {
+  // Given
+  const { build } = await liveRun(t, { skill: '', noSkill: true });
+
+  // When
+  const results = await build();
+
+  // Then
+  assert.equal(results.settings.skill_mode, 'none');
+  assert.equal(results.skill_hash, 'none');
 });
 
 test('buildRunResults hashes the skill apart from the other inputs', async (t) => {

@@ -101,10 +101,12 @@ export function printHeader(
   results: Pick<RunResults, 'skill' | 'settings'>,
   directory: string,
 ) {
-  const { agent, model, judge_model, judge_reasoning } = results.settings;
+  const { agent, skill_mode, model, judge_model, judge_reasoning } =
+    results.settings;
+  const baseline = skill_mode === 'none' ? ' · no skill' : '';
 
   console.log(
-    `${paint(['bold', 'cyan'], '▶')} ${paint('bold', results.skill)}  ${agent ?? 'codex'} · ${model}`,
+    `${paint(['bold', 'cyan'], '▶')} ${paint('bold', results.skill)}  ${agent ?? 'codex'} · ${model}${baseline}`,
   );
   console.log(dim(`  judge ${judge_model} · reasoning ${judge_reasoning}`));
   console.log(dim(`  artifacts  ${directory}`));
