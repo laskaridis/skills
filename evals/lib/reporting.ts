@@ -110,24 +110,34 @@ export function compareResults(
     limitations.push(harness);
   }
 
-  // Results recorded before --agent existed were produced by Codex.
-  const withAgent = (settings: RunResults['settings']) => ({
+  // Results recorded before --agent and --no-skill existed were produced by
+  // Codex with the skill installed.
+  const withDefaults = (settings: RunResults['settings']) => ({
     agent: 'codex',
+    skill_mode: 'installed',
     ...settings,
   });
+  const previousSettings = withDefaults(previous.settings);
+  const currentSettings = withDefaults(current.settings);
 
-  if (
-    withAgent(previous.settings).agent !== withAgent(current.settings).agent
-  ) {
+  if (previousSettings.agent !== currentSettings.agent) {
     limitations.push(
-      `Agent differs (${withAgent(previous.settings).agent} vs ${withAgent(current.settings).agent}); results are not like-for-like`,
+      `Agent differs (${previousSettings.agent} vs ${currentSettings.agent}); results are not like-for-like`,
     );
   }
 
-  if (
-    JSON.stringify(withAgent(previous.settings)) !==
-    JSON.stringify(withAgent(current.settings))
-  ) {
+  if (previousSettings.skill_mode !== currentSettings.skill_mode) {
+    const sides =
+      previousSettings.skill_mode === 'none'
+        ? 'baseline ran without the skill, current ran with it'
+        : 'baseline ran with the skill, current ran without it';
+
+    limitations.push(
+      `With/without-skill comparison: ${sides}; changes reflect the skill's presence, not an edit to it`,
+    );
+  }
+
+  if (JSON.stringify(previousSettings) !== JSON.stringify(currentSettings)) {
     limitations.push('Runtime settings differ');
   }
 
@@ -294,7 +304,9 @@ export function report(results: RunResults) {
       : []),
     `Agent: ${results.settings.model} (${results.settings.reasoning}); judge: ${results.settings.judge_model} (${results.settings.judge_reasoning}).`,
     `CLI: ${results.settings.agent ?? 'codex'} ${results.settings.cli_version}; Node: ${results.settings.node_version}.`,
-    `Skill SHA-256: \`${results.skill_hash}\`.`,
+    results.settings.skill_mode === 'none'
+      ? 'Skill: none (baseline run, skill not installed or invoked).'
+      : `Skill SHA-256: \`${results.skill_hash}\`.`,
     '',
     '| Case | Execution | Checks | Judge execution | Requirements |',
     '|---|---|---|---|---|',

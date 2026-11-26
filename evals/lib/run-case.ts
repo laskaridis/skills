@@ -113,10 +113,12 @@ export async function runCase(
   };
 
   try {
-    await copyTree(
-      options.skill,
-      path.join(workspace, agent.skillDir, options.skillName),
-    );
+    if (!options.noSkill) {
+      await copyTree(
+        options.skill,
+        path.join(workspace, agent.skillDir, options.skillName),
+      );
+    }
 
     for (const file of item.fixtureFiles) {
       const to = path.join(workspace, file);
@@ -132,7 +134,9 @@ export async function runCase(
       options.skillName,
       agent.skillDir,
     );
-    const prompt = agent.skillPrompt(options.skillName, item.prompt);
+    const prompt = options.noSkill
+      ? item.prompt
+      : agent.skillPrompt(options.skillName, item.prompt);
 
     invokingAgent = true;
     const execution = await (options.transport ?? invoke)(

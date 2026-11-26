@@ -14,8 +14,9 @@ describes the existing application. This does **not** test multi-turn memory.
 The skill is asked to write only `specs/workshop-rsvp.spec.md`. The
 [check](checks.ts) requires that exact, nonempty, ordinary file, unchanged
 inputs, and no other outputs. The [judge checklist](cases/complete/expected.md)
-assesses eight independent semantic properties: scope completeness, verifiable
-acceptance criteria, vertical stories, superseded decisions, out-of-scope
+assesses nine independent semantic properties: scope completeness, required
+story structure (stories with their own criteria, not themed requirements and a
+pooled scenario list), verifiable acceptance criteria, vertical stories, superseded decisions, out-of-scope
 capture, implicit assumptions, flagging the two open items under
 "Clarifications needed" instead of silently resolving them, and avoiding
 implementation details.
@@ -29,10 +30,11 @@ pnpm eval specify --model YOUR_MODEL --case complete
 pnpm eval specify --model YOUR_MODEL --case complete --calibrate
 ```
 
-The two [calibration controls](judge-tests.ts) include one fully correct
-reference spec (all eight criteria pass) and one combined defective spec (all
-eight criteria fail). They run with `--calibrate` and consume two additional judge
-calls instead of nine. Check for `grader_disagreement` in the report. Because
+The three [calibration controls](judge-tests.ts) are one fully correct
+reference spec (all eight criteria pass), one combined defective spec (all
+criteria fail), and one flat-requirements spec that is behaviorally correct but
+has no stories (`verifiable_stories` and `vertical_stories` fail). They run with `--calibrate` and consume
+three additional judge calls instead of ten. Check for `grader_disagreement` in the report. Because
 all defects are combined, failures identify misgraded criteria but do not isolate
 a specific defect; these controls do not establish judge accuracy or reproducibility.
 A live evaluation and calibration require an authenticated Codex or Claude CLI.

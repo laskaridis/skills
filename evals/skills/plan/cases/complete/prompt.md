@@ -1,1 +1,1 @@
-Produce a plan for specs/seat-reservation.spec.md. Use ARCHITECTURE.md as additional context.
+Produce a design document and an implementation task plan for specs/seat-reservation.spec.md. Save both as files alongside the specification as `seat-reservation.plan.json` and `seat-reservation.design.md`. Use ARCHITECTURE.md as additional context.

@@ -51,6 +51,32 @@ test('arguments resolve defaults and all supported overrides', () => {
   assert.equal(help.help, true);
 });
 
+test('no-skill flag selects a suite without resolving a skill directory', () => {
+  // When
+  const options = argumentsFor(['plan', '--model', 'agent', '--no-skill']);
+
+  // Then
+  assert.equal(options.noSkill, true);
+  assert.equal(options.skillName, 'plan');
+  assert.equal(options.skill, '');
+});
+
+test('no-skill flag cannot be combined with a skill directory', () => {
+  // When
+  const act = () =>
+    argumentsFor([
+      'plan',
+      '--model',
+      'a',
+      '--no-skill',
+      '--skill',
+      'candidate',
+    ]);
+
+  // Then
+  assert.throws(act, /--no-skill and --skill are mutually exclusive/);
+});
+
 test('create flag needs a case but no model', () => {
   // When
   const options = argumentsFor(['plan', '--case', 'x', '--create']);
@@ -140,6 +166,7 @@ test('CLI exposes help, rejects removed self-test and missing model', () => {
 
     if (args[0] === '--help') {
       assert.ok(!result.stdout.includes('--self-test'));
+      assert.match(result.stdout, /\[--skill DIR \| --no-skill\]/);
     }
   }
 });
@@ -277,6 +304,41 @@ test('orchestrator compares baseline and single selection still calibrates all c
     {
       code: 'ENOENT',
     },
+  );
+});
+
+test('orchestrator runs a no-skill baseline that a with-skill run can compare against', async (t) => {
+  // Given
+  const { args, deps } = await environment(t);
+  const calls: TransportCall[] = [];
+
+  deps.transport = fakeTransport({}, calls);
+
+  // When
+  const baseline = await main(
+    ['synthetic', '--model', 'fake', '--no-skill', '--case', 'a-first'],
+    deps,
+  );
+  const compared = await main(
+    [
+      ...args,
+      '--case',
+      'a-first',
+      '--compare',
+      path.join(baseline!.directory, 'results.json'),
+    ],
+    deps,
+  );
+
+  // Then
+  assert.equal(baseline!.results.skill_hash, 'none');
+  assert.equal(baseline!.results.settings.skill_mode, 'none');
+  assert.equal(calls[0].prompt, 'Improve');
+
+  assert.ok(
+    compared!.results.comparison!.limitations.some((x) =>
+      x.startsWith('With/without-skill comparison'),
+    ),
   );
 });
 

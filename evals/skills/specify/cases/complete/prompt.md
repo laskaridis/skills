@@ -40,4 +40,4 @@ The following is the ordered Q&A between the product owner (User) and the discov
 
 # Current request
 
-Use the specify skill to capture this discussion in a specification at **specs/workshop-rsvp.spec.md**. Produce only that document, using the skill's template; do not implement code. The conversation above is the agreed context, not a request to restart discovery.
+Capture this discussion in a specification at **specs/workshop-rsvp.spec.md** in the form of user stories. Produce only that document do not implement code. The conversation above is the agreed context, not a request to restart discovery.

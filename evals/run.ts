@@ -71,6 +71,11 @@ export function argumentsFor(argv: string[]): RunOptions {
       continue;
     }
 
+    if (arg === '--no-skill') {
+      options.noSkill = true;
+      continue;
+    }
+
     if (arg === '--create') {
       options.create = true;
       continue;
@@ -116,6 +121,10 @@ export function argumentsFor(argv: string[]): RunOptions {
     throw new Error('Unsafe skill name');
   }
 
+  if (options.noSkill && options.skill) {
+    throw new Error('--no-skill and --skill are mutually exclusive');
+  }
+
   if (options.create) {
     if (!options.case) {
       throw new Error('--create requires --case');
@@ -132,9 +141,14 @@ export function argumentsFor(argv: string[]): RunOptions {
 
   options.judgeModel ??= options.model;
   options.judgeReasoning ??= options.reasoning;
-  options.skill = options.skill
-    ? path.resolve(options.skill)
-    : path.join(REPO, 'skills', options.skillName);
+
+  if (options.noSkill) {
+    options.skill = '';
+  } else {
+    options.skill = options.skill
+      ? path.resolve(options.skill)
+      : path.join(REPO, 'skills', options.skillName);
+  }
 
   if (options.compare) {
     options.compare = path.resolve(options.compare);
@@ -208,7 +222,9 @@ export async function buildRunResults({
   cliVersion,
   suite,
 }: RunResultsSource): Promise<RunResults> {
-  const skillHash = sha(JSON.stringify(await hashTree(options.skill)));
+  const skillHash = options.noSkill
+    ? 'none'
+    : sha(JSON.stringify(await hashTree(options.skill)));
   const inputsHash = sha(
     JSON.stringify(await inputsSnapshot(suite, options.grading)),
   );
@@ -223,6 +239,7 @@ export async function buildRunResults({
     harness_git: gitState(REPO),
     settings: {
       agent: agent.name,
+      skill_mode: options.noSkill ? 'none' : 'installed',
       model: options.model,
       judge_model: options.judgeModel,
       reasoning: options.reasoning,
@@ -300,7 +317,7 @@ export async function main(
 
   if (options.help) {
     console.log(
-      'pnpm eval SKILL --model MODEL [--agent codex|claude] [--skill DIR] [--case CASE_ID] [--judge-model MODEL] [--reasoning high] [--judge-reasoning high] [--compare RESULTS.json] [--calibrate]\n       pnpm eval SKILL --case CASE_ID --create',
+      'pnpm eval SKILL --model MODEL [--agent codex|claude] [--skill DIR | --no-skill] [--case CASE_ID] [--judge-model MODEL] [--reasoning high] [--judge-reasoning high] [--compare RESULTS.json] [--calibrate]\n       pnpm eval SKILL --case CASE_ID --create',
     );
     return;
   }

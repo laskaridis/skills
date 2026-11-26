@@ -5,6 +5,7 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { fixture, fakeTransport, put } from './helpers.ts';
 import { runCase, workspaceContents } from '../lib/run-case.ts';
+import { files } from '../lib/utils.ts';
 import { infrastructureFailure } from '../lib/reporting.ts';
 
 test('workspace evidence excludes installed skill and represents unsafe artifacts', async (t) => {
@@ -283,3 +284,62 @@ console.log(JSON.stringify({type:'turn.completed'}));
   assert.equal(result.execution.status, 'ok');
   assert.equal(result.judge.status, 'ok');
 });
+
+for (const agent of ['codex', 'claude'] as const) {
+  test(`no-skill run leaves the skill out of the ${agent} workspace`, async (t) => {
+    // Given
+    const { root, options, item } = await fixture(t);
+    let workspaceFiles: string[] = [];
+    const transport = fakeTransport({
+      onCall: async ({ workspace, mode }) => {
+        if (!mode.judge) {
+          workspaceFiles = await files(workspace);
+        }
+      },
+    });
+
+    // When
+    const result = await runCase(
+      {
+        ...options,
+        agent,
+        noSkill: true,
+        transport,
+        checkCase: () => ({ status: 'pass', failures: [] }),
+      },
+      root,
+      root,
+      item,
+    );
+    const archived = await files(path.join(root, item.id, 'workspace'));
+
+    // Then
+    assert.deepEqual(workspaceFiles, ['document.md']);
+    assert.deepEqual(archived, ['document.md']);
+
+    assert.equal(result.execution.status, 'ok');
+    assert.equal(result.checks.status, 'pass');
+    assert.equal(result.judge.status, 'ok');
+  });
+}
+
+for (const agent of ['codex', 'claude'] as const) {
+  test(`no-skill run sends ${agent} the raw case prompt`, async (t) => {
+    // Given
+    const { root, options, item } = await fixture(t);
+    const calls: TransportCall[] = [];
+    const transport = fakeTransport({}, calls);
+
+    // When
+    await runCase(
+      { ...options, agent, skill: '', noSkill: true, transport },
+      root,
+      root,
+      item,
+    );
+
+    // Then
+    assert.equal(calls[0].stage, 'agent');
+    assert.equal(calls[0].prompt, item.prompt);
+  });
+}

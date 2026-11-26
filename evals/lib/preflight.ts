@@ -66,7 +66,9 @@ export async function preflight(
 
   const previous = await loadBaseline(options.compare);
 
-  await validateSkillDir(options.skill);
+  if (!options.noSkill) {
+    await validateSkillDir(options.skill);
+  }
 
   return { definedCases, previous, cliVersion: agent.version() };
 }

@@ -750,6 +750,27 @@ test('printHeader defaults the agent to codex', () => {
   assert.match(lines[0], /▶ plan\s+codex · gpt/);
 });
 
+test('printHeader identifies a no-skill run', () => {
+  // Given
+  const lines = capture();
+  const results: any = {
+    skill: 'plan',
+    settings: {
+      agent: 'codex',
+      skill_mode: 'none',
+      model: 'gpt',
+      judge_model: 'sonnet',
+      judge_reasoning: 'low',
+    },
+  };
+
+  // When
+  printHeader(results, '/tmp/run');
+
+  // Then
+  assert.match(lines[0], /▶ plan\s+codex · gpt · no skill$/);
+});
+
 test('printSummary formats token counts in millions', () => {
   // Given
   const lines = capture();

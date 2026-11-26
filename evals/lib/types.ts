@@ -85,6 +85,8 @@ export interface RunOptions {
   reasoning: string;
   judgeReasoning: string;
   grading: string;
+  // Baseline run: the skill is neither installed nor invoked; skill is ''.
+  noSkill?: boolean;
   calibrate?: boolean;
   create?: boolean;
   help?: boolean;
