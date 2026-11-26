@@ -1,5 +1,5 @@
 import type { TransportCall } from './helpers.ts';
-import type { Control } from '../lib/types.ts';
+import type { Control } from '../lib/controls.ts';
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { fixture, fakeTransport } from './helpers.ts';

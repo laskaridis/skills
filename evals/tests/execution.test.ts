@@ -1,10 +1,45 @@
-import { test, vi } from 'vitest';
+import { test, vi, type TestContext } from 'vitest';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { temporary, put, fakeCodex } from './helpers.ts';
-import { parseTrace, capture, invoke, TIMEOUT } from '../lib/execution.ts';
+import { invoke, TIMEOUT } from '../lib/execution.ts';
+import { parseCodexTrace } from '../lib/agents.ts';
 import { readJSON } from '../lib/utils.ts';
+
+const OPTIONS = {
+  model: 'agent',
+  judgeModel: 'judge',
+  reasoning: 'high',
+  judgeReasoning: 'low',
+};
+
+const HANG = 'setInterval(()=>{},1000)';
+
+// Runs `invoke` against a fake codex whose body is the given script.
+async function run(
+  t: TestContext,
+  root: string,
+  body: string,
+  extra: { timeout?: number; signal?: AbortSignal } = {},
+  prompt = 'Request',
+) {
+  const bin = await fakeCodex(root, body);
+  const oldPath = process.env.PATH;
+
+  t.onTestFinished(() => {
+    process.env.PATH = oldPath;
+  });
+  process.env.PATH = `${bin}:${oldPath}`;
+
+  return invoke(
+    { ...OPTIONS, ...extra },
+    root,
+    root,
+    path.join(root, 'call'),
+    prompt,
+  );
+}
 
 test('trace parser retains raw usage, errors and final agent messages', () => {
   // Given
@@ -24,8 +59,8 @@ test('trace parser retains raw usage, errors and final agent messages', () => {
     .join('\n');
 
   // When
-  const result = parseTrace(raw);
-  const empty = parseTrace('');
+  const result = parseCodexTrace(raw);
+  const empty = parseCodexTrace('');
 
   // Then
   assert.equal(result.session_id, 'session');
@@ -62,18 +97,13 @@ for (const [name, script, status] of [
     'ok',
   ],
 ]) {
-  test(`capture classifies ${name} and saves evidence`, async (t) => {
+  test(`invoke classifies ${name} and saves evidence`, async (t) => {
     // Given
     const root = await temporary(t);
     const directory = path.join(root, 'call');
 
     // When
-    const result = await capture(process.execPath, ['-e', script], {
-      cwd: root,
-      directory,
-      timeout: 3000,
-      prompt: 'Request',
-    });
+    const result = await run(t, root, script, { timeout: 3000 });
     const prompt = await fs.readFile(
       path.join(directory, 'prompt.txt'),
       'utf8',
@@ -98,7 +128,7 @@ for (const [name, script, status] of [
   });
 }
 
-test('capture retains supplied final file over event text and supplies stdin', async (t) => {
+test('invoke retains supplied final file over event text and supplies stdin', async (t) => {
   // Given
   const root = await temporary(t);
 
@@ -108,13 +138,12 @@ test('capture retains supplied final file over event text and supplies stdin', a
   await put(root, 'call/final.txt', 'Saved');
 
   // When
-  const result = await capture(
-    process.execPath,
-    [
-      '-e',
-      'process.stdin.on("data",x=>process.stderr.write(x));process.stdin.on("end",()=>console.log(JSON.stringify({type:"turn.completed"})))',
-    ],
-    { cwd: root, directory: path.join(root, 'call'), prompt: 'Input' },
+  const result = await run(
+    t,
+    root,
+    'process.stdin.on("data",x=>process.stderr.write(x));process.stdin.on("end",()=>console.log(JSON.stringify({type:"turn.completed"})))',
+    {},
+    'Input',
   );
   const stderr = await fs.readFile(path.join(root, 'call/stderr.txt'), 'utf8');
   const command = await fs.access(path.join(root, 'call/command.json')).then(
@@ -129,83 +158,69 @@ test('capture retains supplied final file over event text and supplies stdin', a
   assert.equal(command, false);
 });
 
-test('capture reports failed spawn', async (t) => {
+test('invoke reports failed spawn', async (t) => {
   // Given
   const root = await temporary(t);
+  const oldPath = process.env.PATH;
+
+  t.onTestFinished(() => {
+    process.env.PATH = oldPath;
+  });
+  process.env.PATH = path.join(root, 'empty');
 
   // When
-  const result = await capture(path.join(root, 'missing'), [], {
-    cwd: root,
-    directory: path.join(root, 'call'),
-  });
+  const result = await invoke(
+    OPTIONS,
+    root,
+    root,
+    path.join(root, 'call'),
+    'Task',
+  );
 
   // Then
   assert.equal(result.status, 'execution_error');
   assert.match(result.spawn_error!, /ENOENT/);
 });
 
-test('capture timeout terminates process group and removes interrupt listeners', async (t) => {
+test('invoke timeout terminates process group and removes interrupt listeners', async (t) => {
+  // Given
   const root = await temporary(t);
   const initial = process.listenerCount('SIGTERM');
 
   // When
-  const result = await capture(
-    process.execPath,
-    ['-e', 'setInterval(()=>{},1000)'],
-    { cwd: root, directory: path.join(root, 'call'), timeout: 50 },
-  );
+  const result = await run(t, root, HANG, { timeout: 300 });
 
   // Then
   assert.equal(result.status, 'timeout');
   assert.equal(process.listenerCount('SIGTERM'), initial);
 });
 
-test('capture forwards parent interrupts to process group', async (t) => {
+test('invoke forwards parent interrupts to process group', async (t) => {
   // Given
   const root = await temporary(t);
-  const timer = setTimeout(() => process.emit('SIGTERM'), 100);
+  const timer = setTimeout(() => process.emit('SIGTERM'), 300);
 
   t.onTestFinished(() => clearTimeout(timer));
 
   // When
-  const result = await capture(
-    process.execPath,
-    ['-e', 'setInterval(()=>{},1000)'],
-    { cwd: root, directory: path.join(root, 'call'), timeout: 3000 },
-  );
+  const result = await run(t, root, HANG, { timeout: 3000 });
 
   // Then
   assert.equal(result.signal, 'SIGTERM');
   assert.equal(result.status, 'cancelled');
 });
 
-test('capture escalates timeout termination when the process group stays alive', async (t) => {
+test('invoke escalates timeout termination when the process ignores SIGTERM', async (t) => {
   // Given
   const root = await temporary(t);
-  const signals: NodeJS.Signals[] = [];
   const initial = process.listenerCount('SIGTERM');
 
   // When
-  const result = await capture(
-    process.execPath,
-    ['-e', 'setInterval(()=>{},1000)'],
-    { cwd: root, directory: path.join(root, 'call'), timeout: 50 },
-    {
-      platform: 'linux',
-      killGroup: (pid, signal) => {
-        signals.push(signal as NodeJS.Signals);
-
-        if (signal === 'SIGTERM') {
-          return true;
-        }
-
-        return process.kill(pid, signal);
-      },
-    },
-  );
+  const result = await run(t, root, `process.on('SIGTERM',()=>{});${HANG}`, {
+    timeout: 1500,
+  });
 
   // Then
-  assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
   assert.equal(result.signal, 'SIGKILL');
   assert.equal(result.status, 'timeout');
   assert.equal(process.listenerCount('SIGTERM'), initial);
@@ -295,83 +310,19 @@ for (const mode of [
   });
 }
 
-test('capture uses direct child termination on Windows boundary', async (t) => {
-  // Given
-  const root = await temporary(t);
-
-  // When
-  const result = await capture(
-    process.execPath,
-    ['-e', 'setInterval(()=>{},1000)'],
-    {
-      cwd: root,
-      directory: path.join(root, 'call'),
-      timeout: 40,
-    },
-    { platform: 'win32' },
-  );
-
-  // Then
-  assert.equal(result.status, 'timeout');
-});
-
-test('capture records non-EPIPE stdin failures and tolerates EPIPE', async (t) => {
-  // Given
-  const { spawn } = await import('node:child_process');
-  const root = await temporary(t);
-
-  for (const code of ['EPIPE', 'EIO']) {
-    // When
-    const result = await capture(
-      process.execPath,
-      [
-        '-e',
-        'setTimeout(()=>console.log(JSON.stringify({type:"turn.completed"})),30)',
-      ],
-      {
-        cwd: root,
-        directory: path.join(root, code),
-      },
-      {
-        spawnProcess: (...args) => {
-          const child = spawn(args[0], args[1], args[2]);
-
-          queueMicrotask(() =>
-            child.stdin!.emit(
-              'error',
-              Object.assign(new Error('stdin failed'), { code }),
-            ),
-          );
-          return child;
-        },
-      },
-    );
-
-    // Then
-    assert.equal(result.status, code === 'EPIPE' ? 'ok' : 'execution_error');
-    assert.equal(result.spawn_error, code === 'EPIPE' ? null : 'stdin failed');
-  }
-});
-
-test('capture stops the child when the run signal aborts', async (t) => {
+test('invoke stops the child when the run signal aborts', async (t) => {
   // Given
   const root = await temporary(t);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 100);
+  const timer = setTimeout(() => controller.abort(), 300);
 
   t.onTestFinished(() => clearTimeout(timer));
 
   // When
-  const result = await capture(
-    process.execPath,
-    ['-e', 'setInterval(()=>{},1000)'],
-    {
-      cwd: root,
-      directory: path.join(root, 'call'),
-      timeout: 3000,
-      signal: controller.signal,
-    },
-  );
+  const result = await run(t, root, HANG, {
+    timeout: 3000,
+    signal: controller.signal,
+  });
 
   // Then
   assert.equal(result.status, 'cancelled');

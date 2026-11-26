@@ -1,8 +1,10 @@
-import type { JsonRecord, Snapshot } from './types.ts';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
+
+/** JSON from agent CLI traces and historical results is validated at runtime. */
+export type JsonRecord = Record<string, any>;
 
 export const sha = (data: string | Buffer) =>
   createHash('sha256').update(data).digest('hex');
@@ -25,6 +27,19 @@ export const exactKeys = (
 ): value is JsonRecord =>
   object(value) &&
   Object.keys(value).sort().join('\0') === [...keys].sort().join('\0');
+
+/** Stats a path without following links; null when it does not exist. */
+export async function optionalStat(file: string) {
+  try {
+    return await fs.lstat(file);
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      return null;
+    }
+
+    throw error;
+  }
+}
 
 // Do not follow links: inputs and artifacts must be ordinary files inside their root.
 export async function files(
@@ -52,6 +67,12 @@ export async function files(
 
   return result;
 }
+
+/**
+ * Workspace file snapshot: relative path to the SHA-256 hash of the file's
+ * content, or 'NON_REGULAR_FILE' for non-regular entries.
+ */
+export type Snapshot = Record<string, string>;
 
 export async function snapshot(root: string): Promise<Snapshot> {
   const result: Snapshot = {};

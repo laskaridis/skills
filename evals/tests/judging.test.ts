@@ -4,26 +4,40 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { fixture, fakeTransport, finding, requirements } from './helpers.ts';
-import { validateJudge, unavailable, judge } from '../lib/judging.ts';
-
-test('judge contract accepts each status with evidence', () => {
-  // Given
-  const statuses = ['pass', 'fail', 'ungradable'];
-
-  // When
-  const statusResults = statuses.map((status) =>
-    validateJudge(finding(requirements, status), requirements),
-  );
-  const missing = unavailable(requirements, 'Missing');
-
-  // Then
-  assert.deepEqual(statusResults, [true, true, true]);
-  assert.deepEqual(missing, [
-    { ...requirements[0], status: 'ungradable', evidence: ['Missing'] },
-  ]);
-});
+import { judge } from '../lib/judging.ts';
 
 const valid = finding();
+
+// Runs judge() against a fake transport that replies with `reply` verbatim.
+async function _judgeReply(
+  t: Parameters<typeof fixture>[0],
+  reply: unknown,
+  graded = requirements,
+) {
+  const { root, options } = await fixture(t);
+  const transport = fakeTransport({ rawJudge: JSON.stringify(reply) }, []);
+
+  return judge(
+    { ...options, transport },
+    root,
+    path.join(root, 'judge'),
+    graded,
+    { stage: 'final' },
+  );
+}
+
+for (const status of ['pass', 'fail', 'ungradable']) {
+  test(`judge contract accepts ${status} with evidence`, async (t) => {
+    // Given
+    const reply = finding(requirements, status);
+
+    // When
+    const result = await _judgeReply(t, reply);
+
+    // Then
+    assert.equal(result.status, 'ok');
+  });
+}
 
 for (const [name, value] of Object.entries({
   null: null,
@@ -55,16 +69,16 @@ for (const [name, value] of Object.entries({
     findings: [{ ...valid.findings[0], evidence: [' '] }],
   },
 })) {
-  test(`judge contract rejects ${name}`, () => {
+  test(`judge contract rejects ${name}`, async (t) => {
     // When
-    const result = validateJudge(value, requirements);
+    const result = await _judgeReply(t, value);
 
     // Then
-    assert.equal(result, false);
+    assert.equal(result.status, 'invalid_response');
   });
 }
 
-test('judge rejects duplicate IDs even when total findings length matches', () => {
+test('judge rejects duplicate IDs even when total findings length matches', async (t) => {
   // Given
   const duplicated = {
     ...valid,
@@ -73,10 +87,10 @@ test('judge rejects duplicate IDs even when total findings length matches', () =
   const expanded = [...requirements, { id: 'another', text: 'Another' }];
 
   // When
-  const result = validateJudge(duplicated, expanded);
+  const result = await _judgeReply(t, duplicated, expanded);
 
   // Then
-  assert.equal(result, false);
+  assert.equal(result.status, 'invalid_response');
 });
 
 for (const [name, config, expected] of [

@@ -1,7 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
-  normalizeResults,
   compareResults,
   observedSettings,
   infrastructureFailure,
@@ -13,47 +12,19 @@ export const one = (): any => ({
   input_hash: 'same',
   execution: { status: 'ok', calls: [{}] },
   checks: { status: 'pass', failures: [] },
-  judge: { status: 'ok' },
-  requirements: [
-    { id: 'works', text: 'Works', status: 'pass', evidence: ['output: works'] },
-  ],
+  judge: {
+    status: 'ok',
+    verdicts: [{ id: 'works', status: 'pass', evidence: ['output: works'] }],
+  },
 });
 
 export const run = (): any => ({
-  format_version: 2,
+  format_version: 3,
   skill: 'synthetic',
   run_id: 'id',
   settings: { model: 'agent', judge_model: 'judge' },
   cases: [one()],
 });
-
-test('normalization returns v2 results unchanged', () => {
-  // Given
-  const current = run();
-
-  // When
-  const normalized = normalizeResults(current);
-
-  // Then
-  assert.equal(normalized, current);
-});
-
-for (const value of [
-  null,
-  {},
-  { cases: [], format_version: 99 },
-  { format_version: 2, cases: [] },
-  { format_version: 2, skill: 'x', cases: [{}] },
-  { format_version: 1, cases: [{}] },
-]) {
-  test(`unsupported results ${JSON.stringify(value)}`, () => {
-    // When
-    const act = () => normalizeResults(value);
-
-    // Then
-    assert.throws(act);
-  });
-}
 
 for (const [from, to, direction] of [
   ['pass', 'pass', 'unchanged'],
@@ -66,8 +37,8 @@ for (const [from, to, direction] of [
     const before = run();
     const after = run();
 
-    before.cases[0].requirements[0].status = from;
-    after.cases[0].requirements[0].status = to;
+    before.cases[0].judge.verdicts[0].status = from;
+    after.cases[0].judge.verdicts[0].status = to;
 
     // When
     const comparison = compareResults(before, after);
@@ -77,6 +48,29 @@ for (const [from, to, direction] of [
     assert.equal(change!.direction, direction);
   });
 }
+
+test('comparison skips requirements when either judge did not succeed', () => {
+  // Given
+  const before = run();
+  const after = run();
+
+  after.cases[0].judge = { status: 'timeout', verdicts: [] };
+
+  // When
+  const c = compareResults(before, after);
+  const inverse = compareResults(after, before);
+
+  // Then
+  for (const comparison of [c, inverse]) {
+    assert.ok(!comparison.changes.some((x) => x.channel === 'requirement'));
+    assert.deepEqual(comparison.added_requirements, []);
+    assert.deepEqual(comparison.removed_requirements, []);
+  }
+
+  assert.ok(
+    c.changes.some((x) => x.channel === 'judge' && x.after === 'timeout'),
+  );
+});
 
 test('comparison identifies additions, removals and changed experiment inputs', () => {
   // Given
@@ -89,8 +83,7 @@ test('comparison identifies additions, removals and changed experiment inputs', 
   after.settings.model = 'other';
   after.observed_settings = { available: true };
   after.cases[0].input_hash = 'changed';
-  after.cases[0].requirements[0].text = 'Changed';
-  after.cases[0].requirements.push({ id: 'new', status: 'pass' });
+  after.cases[0].judge.verdicts.push({ id: 'new', status: 'pass' });
   after.cases.push({ ...one(), case: 'added' });
   before.cases.push({ ...one(), case: 'removed' });
 
@@ -103,7 +96,6 @@ test('comparison identifies additions, removals and changed experiment inputs', 
   assert.deepEqual(c.removed_cases, ['synthetic/removed']);
   assert.equal(c.added_requirements.length, 1);
   assert.ok(c.limitations.some((x) => x.includes('case inputs')));
-  assert.ok(c.limitations.some((x) => x.includes('requirement text')));
   assert.ok(c.limitations.some((x) => x.includes('Observed')));
   assert.ok(c.limitations.some((x) => x.includes('Runtime')));
 
@@ -193,7 +185,7 @@ test('quality failures, absent judges and disagreements are successful experimen
 
   value.cases[0].checks.status = 'fail';
   value.cases[0].judge.status = 'not_run';
-  value.cases[0].requirements[0].status = 'fail';
+  value.cases[0].judge.verdicts[0].status = 'fail';
   value.calibration = { status: 'grader_disagreement' };
 
   // When
@@ -221,13 +213,13 @@ test('reports include relevant evidence links and escape comparison cells', () =
         id: 'control',
         status: 'grader_disagreement',
         expected: { works: 'pass' },
-        judge: { finding: { findings: [{ id: 'works', status: 'fail' }] } },
+        judge: { verdicts: [{ id: 'works', status: 'fail' }] },
       },
       {
         id: 'missing',
         status: 'judge_error',
         expected: { works: 'pass' },
-        judge: {},
+        judge: { verdicts: [] },
       },
     ],
   };

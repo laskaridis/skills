@@ -1,18 +1,17 @@
 import type { TestContext } from 'vitest';
-import type {
-  CaseDefinition,
-  InvocationMode,
-  JsonRecord,
-  JudgeFinding,
-  Requirement,
-  RunOptions,
-  Transport,
-} from '../lib/types.ts';
+import type { CaseDefinition, Requirement } from '../lib/cases.ts';
+import type { JudgeVerdict } from '../lib/judging.ts';
+import type { InvocationMode } from '../lib/agents.ts';
+import type { ExecutionOptions, Transport } from '../lib/execution.ts';
+import type { RunOptions } from '../run.ts';
 import * as fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readJSON, writeJSON } from '../lib/utils.ts';
+import { readJSON, writeJSON, type JsonRecord } from '../lib/utils.ts';
+
+/** The judge's reply, as defined by quality.schema.json. */
+type JudgeReply = { findings: JudgeVerdict[] };
 
 export interface TransportCall {
   workspace: string;
@@ -25,7 +24,7 @@ export interface TransportCall {
 
 export interface FakeConfig {
   onCall?: (
-    call: TransportCall & { options: RunOptions; runtime: string },
+    call: TransportCall & { options: ExecutionOptions; runtime: string },
   ) => void | Promise<void>;
   [key: string]: any;
 }
@@ -54,8 +53,11 @@ export async function put(
   return target;
 }
 
-// Declares one judge control, "prepared", that expects every criterion of the
-// case to pass for a final message of "Done" and no generated files.
+/**
+ * Declares one judge control, "prepared", that expects every criterion of the
+ * case to pass for a final message of "Done" and no generated files.
+ * @param suite Path to the suite directory to write judge-controls/ into.
+ */
 export async function putControl(suite: string, caseId: string) {
   await put(
     suite,
@@ -73,11 +75,11 @@ export function finding(
   req: Requirement[] = requirements,
   status = 'pass',
   extra = {},
-): JudgeFinding {
+): JudgeReply {
   return {
     findings: req.map((r) => ({
       id: r.id,
-      status: status as JudgeFinding['findings'][number]['status'],
+      status: status as JudgeVerdict['status'],
       evidence: ['document.md: output'],
     })),
     ...extra,

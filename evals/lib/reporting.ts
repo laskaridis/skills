@@ -1,87 +1,45 @@
-import type {
-  CaseResult,
-  Comparison,
-  ComparisonChange,
-  RequirementChange,
-  RunResults,
-} from './types.ts';
-import { object } from './utils.ts';
+/**
+ * Interprets the results of an eval run, without running or grading anything.
+ *
+ * Responsibilities:
+ * - compare a run with a baseline and flag what limits the comparison
+ * - summarize the CLI settings observed during the run
+ * - tell infrastructure failures apart from quality failures
+ * - render the run as a Markdown report
+ *
+ * @module
+ */
 
-export function normalizeResults(value: unknown): RunResults {
-  if (!object(value) || !Array.isArray(value.cases)) {
-    throw new Error('Unsupported baseline format: missing cases');
-  }
+import type { CaseResult } from './run-case.ts';
+import { normalizeResults, type RunResults } from './results.ts';
 
-  if (value.format_version !== 2) {
-    throw new Error(`Unsupported baseline format: ${value.format_version}`);
-  }
-
-  if (
-    typeof value.skill !== 'string' ||
-    value.cases.some(
-      (c) =>
-        typeof c.case !== 'string' ||
-        !Array.isArray(c.requirements) ||
-        !c.execution ||
-        !c.checks ||
-        !c.judge,
-    )
-  ) {
-    throw new Error('Invalid version-2 results');
-  }
-
-  return value as RunResults;
+/** One requirement or channel outcome that differs between baseline and current run. */
+export interface ComparisonChange {
+  skill: string;
+  case: string;
+  channel: string;
+  requirement?: string;
+  before: unknown;
+  after: unknown;
+  direction: string;
 }
 
-const direction = (from: unknown, to: unknown) =>
-  from === to
-    ? 'unchanged'
-    : from === 'fail' && to === 'pass'
-      ? 'improvement'
-      : from === 'pass' && to === 'fail'
-        ? 'regression'
-        : 'availability_change';
-
-type HarnessGit = NonNullable<RunResults['harness_git']>;
-
-function harnessSides(
-  previous: HarnessGit | undefined,
-  current: HarnessGit | undefined,
-  predicate: (git: HarnessGit | undefined) => boolean,
-) {
-  const sides = [
-    predicate(previous) ? 'baseline' : '',
-    predicate(current) ? 'current' : '',
-  ].filter(Boolean);
-
-  return sides.join(' and ');
+/** Identifies a requirement added or removed between two runs. */
+export interface RequirementChange {
+  skill: string;
+  case: string;
+  id: string;
 }
 
-function harnessLimitation(
-  previous: HarnessGit | undefined,
-  current: HarnessGit | undefined,
-) {
-  const unknown = harnessSides(
-    previous,
-    current,
-    (git) => !git || !git.commit || git.dirty === null,
-  );
-
-  if (unknown) {
-    return `Harness revision is unknown for the ${unknown} run; harness changes cannot be ruled out`;
-  }
-
-  const dirty = harnessSides(previous, current, (git) => git!.dirty === true);
-
-  if (dirty) {
-    return `Harness working tree was dirty for the ${dirty} run; the recorded commit does not identify the harness code, so harness changes cannot be ruled out`;
-  }
-
-  if (previous!.commit !== current!.commit) {
-    return `Harness commits differ (${previous!.commit!.slice(0, 7)} vs ${current!.commit!.slice(0, 7)}); changes to execution, evidence or comparison code may affect results`;
-  }
-
-  return undefined;
+/** Differences between a baseline run and the current run; `limitations` lists caveats that weaken the comparison. */
+export interface Comparison {
+  limitations: string[];
+  changes: ComparisonChange[];
+  added_cases: string[];
+  removed_cases: string[];
+  excluded_cases: string[];
+  added_requirements: RequirementChange[];
+  removed_requirements: RequirementChange[];
 }
 
 /**
@@ -114,7 +72,7 @@ export function compareResults(
     }
   }
 
-  const harness = harnessLimitation(previous.harness_git, current.harness_git);
+  const harness = _harnessLimitation(previous.harness_git, current.harness_git);
 
   if (harness) {
     limitations.push(harness);
@@ -216,14 +174,19 @@ export function compareResults(
         channel,
         before: from,
         after: to,
-        direction: direction(from, to),
+        direction: _direction(from, to),
       });
     }
 
-    const oldIds = new Map(before.requirements.map((f) => [f.id, f]));
-    const newIds = new Map(after.requirements.map((f) => [f.id, f]));
+    // Without verdicts from both sides, the judge channel already shows why.
+    if (before.judge.status !== 'ok' || after.judge.status !== 'ok') {
+      continue;
+    }
 
-    for (const [id, finding] of newIds) {
+    const oldIds = new Map(before.judge.verdicts.map((v) => [v.id, v]));
+    const newIds = new Map(after.judge.verdicts.map((v) => [v.id, v]));
+
+    for (const [id, verdict] of newIds) {
       if (!oldIds.has(id)) {
         addedRequirements.push({ skill: current.skill, case: after.case, id });
         continue;
@@ -231,20 +194,14 @@ export function compareResults(
 
       const old = oldIds.get(id)!;
 
-      if (old.text !== finding.text) {
-        limitations.push(
-          `${caseKey}/${id}: requirement text changed or was unavailable`,
-        );
-      }
-
       changes.push({
         skill: current.skill,
         case: after.case,
         channel: 'requirement',
         requirement: id,
         before: old.status,
-        after: finding.status,
-        direction: direction(old.status, finding.status),
+        after: verdict.status,
+        direction: _direction(old.status, verdict.status),
       });
     }
 
@@ -280,6 +237,10 @@ export function compareResults(
   };
 }
 
+/**
+ * Collects the CLI settings observed for each case's agent calls and quality
+ * judge, keyed by case ID. Unavailable settings are null.
+ */
 export function observedSettings(results: Pick<RunResults, 'cases'>) {
   return Object.fromEntries(
     results.cases.map((item) => [
@@ -294,6 +255,10 @@ export function observedSettings(results: Pick<RunResults, 'cases'>) {
   );
 }
 
+/**
+ * Returns true if the run failed to execute or grade. Quality failures and grader
+ * disagreements do not count.
+ */
 export function infrastructureFailure(
   results: Pick<RunResults, 'cases' | 'calibration'>,
 ) {
@@ -310,9 +275,10 @@ export function infrastructureFailure(
   );
 }
 
-const cell = (value: unknown) =>
-  String(value).replaceAll('|', '\\|').replaceAll('\n', ' ');
-
+/**
+ * Renders the run as a Markdown report. Its links are relative, so save it in the
+ * run's output directory.
+ */
 export function report(results: RunResults) {
   const lines = [
     `# ${results.skill} eval run`,
@@ -337,7 +303,7 @@ export function report(results: RunResults) {
 
   for (const item of results.cases) {
     lines.push(
-      `| [${item.case}](${item.case}/result.json) | ${item.execution.status} | ${item.checks.status} | ${item.judge.status} | ${item.requirements.map((f) => `${f.id}: ${f.status}`).join('; ')} |`,
+      `| [${item.case}](${item.case}/result.json) | ${item.execution.status} | ${item.checks.status} | ${item.judge.status} | ${item.judge.verdicts.map((f) => `${f.id}: ${f.status}`).join('; ')} |`,
     );
   }
 
@@ -373,7 +339,7 @@ export function report(results: RunResults) {
       lines.push('', `- Check: ${failure}`);
     }
 
-    for (const f of item.requirements) {
+    for (const f of item.judge.verdicts) {
       lines.push(
         '',
         `**${f.id}: ${f.status}**`,
@@ -405,7 +371,7 @@ export function report(results: RunResults) {
 
       for (const [id, expected] of Object.entries(control.expected)) {
         lines.push(
-          `- ${id}: expected ${expected}; observed ${control.judge.finding?.findings.find((f) => f.id === id)?.status ?? 'unavailable'}`,
+          `- ${id}: expected ${expected}; observed ${control.judge.verdicts.find((f) => f.id === id)?.status ?? 'unavailable'}`,
         );
       }
     }
@@ -422,7 +388,7 @@ export function report(results: RunResults) {
       '|---|---|---|---|---|',
       ...c.changes.map(
         (row) =>
-          `| ${row.skill}/${row.case} | ${row.channel}${row.requirement ? ` / ${row.requirement}` : ''} | ${cell(row.before)} | ${cell(row.after)} | ${row.direction} |`,
+          `| ${row.skill}/${row.case} | ${row.channel}${row.requirement ? ` / ${row.requirement}` : ''} | ${_cell(row.before)} | ${_cell(row.after)} | ${row.direction} |`,
       ),
     );
 
@@ -450,4 +416,64 @@ export function report(results: RunResults) {
     '',
   );
   return lines.join('\n');
+}
+
+function _direction(from: unknown, to: unknown) {
+  if (from === to) {
+    return 'unchanged';
+  }
+
+  if (from === 'fail' && to === 'pass') {
+    return 'improvement';
+  }
+
+  return from === 'pass' && to === 'fail'
+    ? 'regression'
+    : 'availability_change';
+}
+
+type HarnessGit = NonNullable<RunResults['harness_git']>;
+
+function _harnessSides(
+  previous: HarnessGit | undefined,
+  current: HarnessGit | undefined,
+  predicate: (git: HarnessGit | undefined) => boolean,
+) {
+  const sides = [
+    predicate(previous) ? 'baseline' : '',
+    predicate(current) ? 'current' : '',
+  ].filter(Boolean);
+
+  return sides.join(' and ');
+}
+
+function _harnessLimitation(
+  previous: HarnessGit | undefined,
+  current: HarnessGit | undefined,
+) {
+  const unknown = _harnessSides(
+    previous,
+    current,
+    (git) => !git || !git.commit || git.dirty === null,
+  );
+
+  if (unknown) {
+    return `Harness revision is unknown for the ${unknown} run; harness changes cannot be ruled out`;
+  }
+
+  const dirty = _harnessSides(previous, current, (git) => git!.dirty === true);
+
+  if (dirty) {
+    return `Harness working tree was dirty for the ${dirty} run; the recorded commit does not identify the harness code, so harness changes cannot be ruled out`;
+  }
+
+  if (previous!.commit !== current!.commit) {
+    return `Harness commits differ (${previous!.commit!.slice(0, 7)} vs ${current!.commit!.slice(0, 7)}); changes to execution, evidence or comparison code may affect results`;
+  }
+
+  return undefined;
+}
+
+function _cell(value: unknown) {
+  return String(value).replaceAll('|', '\\|').replaceAll('\n', ' ');
 }

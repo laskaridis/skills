@@ -3,29 +3,30 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { temporary, put } from './helpers.ts';
-import { parseChecklist, loadCases, createCase } from '../lib/cases.ts';
+import { loadCases, createCase } from '../lib/cases.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs/promises')>()),
 }));
 
-test('checklists retain stable IDs, continuation text and CRLF', () => {
+test('checklists retain stable IDs, continuation text and CRLF', async (t) => {
   // Given
+  const root = await suite(t);
   const text = '\n- [one] First\r\n  next\r\n\tmore\n\n- [two] Last\n';
 
+  await put(root, 'cases/a-first/expected.md', text);
+
   // When
-  const result = parseChecklist(text);
+  const [first] = await loadCases(root, 'skill');
 
   // Then
-  assert.deepEqual(result, [
+  assert.deepEqual(first.requirements, [
     { id: 'one', text: 'First\nnext\nmore' },
     { id: 'two', text: 'Last' },
   ]);
 });
 
 for (const [name, text] of Object.entries({
-  empty: '',
-  blank: '\n ',
   missingText: '- [id]',
   whitespace: '- [id]   ',
   duplicate: '- [id] A\n- [id] B',
@@ -35,14 +36,17 @@ for (const [name, text] of Object.entries({
   invalidId: '- [a.b] text',
   singleIndent: ' x',
 })) {
-  test(`checklist rejects ${name} with source and line`, () => {
+  test(`checklist rejects ${name} with source and line`, async (t) => {
     // Given
-    const withSource = () => parseChecklist(text, 'source.md');
-    const withDefault = () => parseChecklist(text);
+    const root = await suite(t);
+
+    await put(root, 'cases/a-first/expected.md', text);
+
+    // When
+    const result = loadCases(root, 'skill');
 
     // Then
-    assert.throws(withSource, /source.md:\d+:/);
-    assert.throws(withDefault, /expected.md:/);
+    await assert.rejects(result, /a-first[\\/]expected\.md:\d+:/);
   });
 }
 

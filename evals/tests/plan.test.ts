@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { temporary, put, EVALS } from './helpers.ts';
-import { snapshot } from '../lib/utils.ts';
+import { snapshot, type Snapshot } from '../lib/utils.ts';
 import { checkCase, checkStructure } from '../skills/plan/checks.ts';
 import { loadCases } from '../lib/cases.ts';
-import { loadJudgeControls } from '../lib/loader.ts';
+import { loadJudgeControls } from '../lib/controls.ts';
 
 const SUITE = path.join(EVALS, 'skills/plan');
 
@@ -61,11 +61,7 @@ async function setup(t: import('vitest').TestContext) {
   return { root, initial, plan };
 }
 
-async function check(
-  root: string,
-  initial: import('../lib/types.ts').Snapshot,
-  plan: unknown,
-) {
+async function check(root: string, initial: Snapshot, plan: unknown) {
   await put(root, PLAN, JSON.stringify(plan));
   return checkStructure(root, initial);
 }

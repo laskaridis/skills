@@ -1,14 +1,21 @@
-import type {
-  CalibrationResult,
-  CaseResult,
-  Comparison,
-  Execution,
-  Finding,
-  RunResults,
-} from './types.ts';
+/**
+ * Presents a run on the terminal.
+ *
+ * Responsibilities:
+ * - show progress, case, calibration and comparison output
+ * - summarize the run, including its PASSED or FAILED verdict and token use
+ *
+ * @module
+ */
+
+import type { CalibrationResult } from './calibration.ts';
+import type { RunResults } from './results.ts';
+import type { Execution } from './execution.ts';
+import type { CaseResult } from './run-case.ts';
+import type { JudgeResult } from './judging.ts';
 import path from 'node:path';
 import { styleText } from 'node:util';
-import { infrastructureFailure } from './reporting.ts';
+import { infrastructureFailure, type Comparison } from './reporting.ts';
 
 type Format = Parameters<typeof styleText>[0];
 
@@ -152,34 +159,38 @@ export async function busy<T>(
   }
 }
 
-function requirementLines(requirements: Finding[]) {
-  if (requirements.length === 0) {
+function requirementLines({ status, verdicts }: JudgeResult) {
+  if (status !== 'ok') {
+    return [line(icons.warn(), 'requirements', 'ungradable')];
+  }
+
+  if (verdicts.length === 0) {
     return [line(icons.skip(), 'requirements', 'none')];
   }
 
-  const unavailable = requirements.every((r) => r.status === 'ungradable');
-  const passed = requirements.filter((r) => r.status === 'pass').length;
+  const unavailable = verdicts.every((v) => v.status === 'ungradable');
+  const passed = verdicts.filter((v) => v.status === 'pass').length;
   const lines = [
     line(
       unavailable
         ? icons.warn()
-        : passed === requirements.length
+        : passed === verdicts.length
           ? icons.ok()
           : icons.fail(),
       'requirements',
-      unavailable ? 'ungradable' : `${passed}/${requirements.length}`,
+      unavailable ? 'ungradable' : `${passed}/${verdicts.length}`,
     ),
   ];
 
-  for (const requirement of requirements) {
+  for (const verdict of verdicts) {
     const icon =
-      requirement.status === 'pass'
+      verdict.status === 'pass'
         ? icons.ok()
-        : requirement.status === 'fail'
+        : verdict.status === 'fail'
           ? icons.fail()
           : icons.warn();
 
-    lines.push(`      ${icon} ${requirement.id}`);
+    lines.push(`      ${icon} ${verdict.id}`);
   }
 
   return lines;
@@ -223,7 +234,7 @@ export function printCase(result: CaseResult) {
       console.log(`      ${icons.fail()} ${firstLine(failure)}`);
     }
 
-    for (const text of requirementLines(result.requirements)) {
+    for (const text of requirementLines(result.judge)) {
       console.log(text);
     }
   }
@@ -260,8 +271,7 @@ export function printCalibration(calibration: CalibrationResult) {
     const expected = Object.entries(control.expected);
     const mismatched = expected.filter(
       ([id, state]) =>
-        control.judge.finding?.findings.find((f) => f.id === id)?.status !==
-        state,
+        control.judge.verdicts.find((f) => f.id === id)?.status !== state,
     ).length;
 
     if (control.status === 'pass') {
@@ -370,14 +380,14 @@ export function printSummary(
   for (const c of results.cases) {
     if (
       c.checks.status === 'fail' ||
-      c.requirements.some((r) => r.status === 'fail')
+      c.judge.verdicts.some((v) => v.status === 'fail')
     ) {
       failed++;
     } else if (
       c.execution.status === 'ok' &&
       ['pass', 'skipped'].includes(c.checks.status) &&
-      c.requirements.length > 0 &&
-      c.requirements.every((r) => r.status === 'pass')
+      c.judge.verdicts.length > 0 &&
+      c.judge.verdicts.every((v) => v.status === 'pass')
     ) {
       passed++;
     } else {

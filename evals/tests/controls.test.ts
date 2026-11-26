@@ -3,11 +3,7 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { put, temporary } from './helpers.ts';
-import {
-  loadJudgeControls,
-  loadDeterministicChecksFor,
-  validateControls,
-} from '../lib/loader.ts';
+import { loadJudgeControls } from '../lib/controls.ts';
 
 const cases = [
   {
@@ -53,51 +49,35 @@ const declaration = {
   },
 };
 
+// Writes a suite whose controls.yml is the given document (JSON is valid YAML)
+// and whose only fixture folder is bad-output.
+async function suiteDeclaring(
+  t: import('vitest').TestContext,
+  document: unknown,
+) {
+  const suite = await temporary(t);
+
+  await put(suite, 'judge-controls/controls.yml', JSON.stringify(document));
+  await put(
+    suite,
+    'judge-controls/fixtures/bad-output/final-message.md',
+    'Done.',
+  );
+  return suite;
+}
+
 function declare(control: Record<string, unknown>) {
   return { version: 1, controls: { 'bad-output': control } };
 }
 
 const valid = declaration.controls['bad-output'];
 
-test('optional checks module is null when absent and rejected when not a file', async (t) => {
+test('loadJudgeControls expands default and expect to a verdict for every criterion', async (t) => {
   // Given
-  const root = await temporary(t);
-  const empty = await temporary(t);
-
-  await put(root, 'checks.ts/inner.ts', '');
+  const suite = await suiteDeclaring(t, declaration);
 
   // When
-  const hooks = await loadDeterministicChecksFor(empty);
-  const act = () => loadDeterministicChecksFor(root);
-
-  // Then
-  assert.equal(hooks, null);
-  await assert.rejects(act, /Expected ordinary module/);
-});
-
-test('hooks must export checkCase when checks.ts exists', async (t) => {
-  // Given
-  const validHooks = await temporary(t);
-  const invalid = await temporary(t);
-  const empty = await temporary(t);
-
-  await put(validHooks, 'checks.ts', 'export function checkCase() {}');
-  await put(invalid, 'checks.ts', 'export const other = 1;');
-
-  // When
-  const loaded = await loadDeterministicChecksFor(validHooks);
-  const none = await loadDeterministicChecksFor(empty);
-  const act = () => loadDeterministicChecksFor(invalid);
-
-  // Then
-  assert.equal(typeof loaded.checkCase, 'function');
-  assert.equal(none, null);
-  await assert.rejects(act, /checks.ts must export checkCase/);
-});
-
-test('validateControls expands default and expect to a verdict for every criterion', () => {
-  // When
-  const controls = validateControls(declaration, cases);
+  const controls = await loadJudgeControls(suite, cases);
 
   // Then
   assert.deepEqual(controls, [
@@ -105,23 +85,28 @@ test('validateControls expands default and expect to a verdict for every criteri
       id: 'bad-output',
       caseId: 'basic',
       description: 'Plausible but inaccurate.',
+      generatedFiles: {},
+      finalResponse: 'Done.',
       expected: { accurate: 'fail', complete: 'pass' },
     },
   ]);
 });
 
-test('validateControls accepts a control without description or expect', () => {
+test('loadJudgeControls accepts a control without description or expect', async (t) => {
   // Given
   const document = declare({ case: 'basic', default: 'ungradable' });
+  const suite = await suiteDeclaring(t, document);
 
   // When
-  const controls = validateControls(document, cases);
+  const controls = await loadJudgeControls(suite, cases);
 
   // Then
   assert.deepEqual(controls, [
     {
       id: 'bad-output',
       caseId: 'basic',
+      generatedFiles: {},
+      finalResponse: 'Done.',
       expected: { accurate: 'ungradable', complete: 'ungradable' },
     },
   ]);
@@ -147,12 +132,15 @@ for (const [name, document] of Object.entries({
   unknownCriterion: declare({ ...valid, expect: { other: 'fail' } }),
   invalidStatus: declare({ ...valid, expect: { accurate: 'other' } }),
 })) {
-  test(`validateControls rejects ${name}`, () => {
+  test(`loadJudgeControls rejects ${name}`, async (t) => {
+    // Given
+    const suite = await suiteDeclaring(t, document);
+
     // When
-    const act = () => validateControls(document, cases);
+    const act = () => loadJudgeControls(suite, cases);
 
     // Then
-    assert.throws(act);
+    await assert.rejects(act, /controls\.yml|control/i);
   });
 }
 

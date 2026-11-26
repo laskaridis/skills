@@ -1,4 +1,4 @@
-import type { CheckContext, CheckResult } from '../../lib/types.ts';
+import type { CheckContext, CheckResult } from '../../lib/checks.ts';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { readablePath, snapshot } from '../../lib/utils.ts';

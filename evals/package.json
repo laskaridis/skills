@@ -4,6 +4,7 @@
     "@stylistic/eslint-plugin": "^6.0.1",
     "@types/node": "^22.20.5",
     "@vitest/coverage-v8": "^5.1.1",
+    "dependency-cruiser": "^18.9.0",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
@@ -26,9 +27,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix --max-warnings 0",
+    "lint:deps": "depcruise --config .dependency-cruiser.mjs run.ts lib skills tests",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "check": "pnpm lint:fix && pnpm format && pnpm lint && pnpm typecheck && pnpm test:coverage"
+    "check": "pnpm lint:fix && pnpm format && pnpm lint && pnpm lint:deps && pnpm typecheck && pnpm test:coverage"
   },
   "dependencies": {
     "yaml": "^2.9.1"

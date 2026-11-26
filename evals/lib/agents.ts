@@ -1,19 +1,28 @@
-import type {
-  AgentName,
-  Execution,
-  InvocationMode,
-  JsonRecord,
-  RunOptions,
-} from './types.ts';
+/**
+ * Adapts each supported agent CLI (Codex, Claude) to a common `Agent` interface.
+ *
+ * Responsibilities:
+ * - build the command line and environment for agent and judge calls
+ * - prepare the runtime home, including authentication
+ * - parse CLI traces and report observed settings
+ *
+ * @module
+ */
+
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { files } from './utils.ts';
+import { files, type JsonRecord } from './utils.ts';
 
-export const AGENT_NAMES: AgentName[] = ['codex', 'claude'];
+/** Per-call options for a transport. `judge` marks a grading call; `schema` is the output schema to enforce, if any. */
+export interface InvocationMode {
+  judge?: boolean;
+  schema?: string | null;
+}
 
-export const DEFAULT_AGENT: AgentName = 'codex';
+/** Supported agents that can run a skill or act as judge. */
+export type AgentName = 'codex' | 'claude';
 
 export interface Trace {
   session_id: string | null;
@@ -30,10 +39,12 @@ export interface Trace {
   init?: JsonRecord | null;
 }
 
-type Models = Pick<
-  RunOptions,
-  'model' | 'judgeModel' | 'reasoning' | 'judgeReasoning'
->;
+interface Models {
+  model: string;
+  judgeModel: string;
+  reasoning: string;
+  judgeReasoning: string;
+}
 
 export interface Agent {
   name: AgentName;
@@ -57,7 +68,7 @@ export interface Agent {
   parseTrace(raw: string): Trace;
   observedSettings(
     runtime: string,
-    execution: Execution,
+    trace: Partial<Pick<Trace, 'session_id' | 'init'>>,
   ): Promise<JsonRecord | null>;
   settingsNote(observed: JsonRecord | null): string;
 }
@@ -76,6 +87,10 @@ function splitLines(raw: string) {
 
   return { events, parseErrors };
 }
+
+export const AGENT_NAMES: AgentName[] = ['codex', 'claude'];
+
+export const DEFAULT_AGENT: AgentName = 'codex';
 
 function cliVersion(label: string, binary: string) {
   const version = spawnSync(binary, ['--version'], { encoding: 'utf8' });
@@ -219,14 +234,14 @@ const codex: Agent = {
     return { args, env: { ...process.env, CODEX_HOME: runtime } };
   },
   parseTrace: parseCodexTrace,
-  async observedSettings(runtime, execution) {
+  async observedSettings(runtime, trace) {
     try {
       const sessions = path.join(runtime, 'sessions');
       const sessionFile = (await files(sessions)).find(
         (file) =>
           file.endsWith('.jsonl') &&
-          execution.session_id &&
-          file.includes(String(execution.session_id)),
+          trace.session_id &&
+          file.includes(String(trace.session_id)),
       );
 
       if (!sessionFile) {
@@ -336,9 +351,7 @@ const claude: Agent = {
     };
   },
   parseTrace: parseClaudeTrace,
-  async observedSettings(_runtime, execution) {
-    const init = execution.init as JsonRecord | null | undefined;
-
+  async observedSettings(_runtime, { init }) {
     return init
       ? {
           model: init.model ?? null,

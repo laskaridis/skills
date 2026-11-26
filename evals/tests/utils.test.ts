@@ -18,6 +18,7 @@ import {
   gitInit,
   gitState,
   readablePath,
+  optionalStat,
 } from '../lib/utils.ts';
 
 test('scalar helpers validate hashes, strings, objects and keys', () => {
@@ -187,6 +188,24 @@ test('readablePath accepts only ordinary files with safe relative components', a
   }
 
   await assert.rejects(readablePath(root, 'missing'), /ENOENT/);
+});
+
+test('optionalStat stats without following links and is null only when missing', async (t) => {
+  // Given
+  const root = await temporary(t);
+
+  await put(root, 'file', 'content');
+  await fs.symlink('file', path.join(root, 'link'));
+
+  // When
+  const link = await optionalStat(path.join(root, 'link'));
+  const missing = await optionalStat(path.join(root, 'missing'));
+  const act = () => optionalStat(path.join(root, 'file/inner'));
+
+  // Then
+  assert.equal(link?.isSymbolicLink(), true);
+  assert.equal(missing, null);
+  await assert.rejects(act, /ENOTDIR/);
 });
 
 test('Git initialization creates an isolated repository', async (t) => {

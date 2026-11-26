@@ -3,24 +3,41 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
-import { fixture, fakeTransport, put } from './helpers.ts';
-import { runCase, workspaceContents } from '../lib/run-case.ts';
+import { fixture, fakeTransport } from './helpers.ts';
+import { runCase } from '../lib/run-case.ts';
 import { files } from '../lib/utils.ts';
 import { infrastructureFailure } from '../lib/reporting.ts';
 
 test('workspace evidence excludes installed skill and represents unsafe artifacts', async (t) => {
   // Given
-  const { root } = await fixture(t);
-
-  await put(root, '.agents/skills/synthetic/SKILL.md', 'Hidden');
-  await fs.symlink('/outside', path.join(root, 'link'));
+  const { root, options, item } = await fixture(t);
+  const calls: TransportCall[] = [];
+  const transport = fakeTransport(
+    {
+      onCall: async ({ stage, workspace }) => {
+        if (stage === 'agent') {
+          await fs.symlink('/outside', path.join(workspace, 'link'));
+        }
+      },
+    },
+    calls,
+  );
 
   // When
-  const contents = await workspaceContents(root, 'synthetic');
+  await runCase({ ...options, transport }, root, root, item);
+  const evidence = calls.find((c) => c.stage === 'final')!.bundle;
 
   // Then
-  assert.equal(contents['.agents/skills/synthetic/SKILL.md'], undefined);
-  assert.equal(contents.link, '[non-regular or unsafe artifact]');
+  assert.deepEqual(Object.keys(evidence.input_files), ['document.md']);
+  assert.deepEqual(Object.keys(evidence.workspace_files).sort(), [
+    'document.md',
+    'link',
+  ]);
+
+  assert.equal(
+    evidence.workspace_files.link,
+    '[non-regular or unsafe artifact]',
+  );
 });
 
 const scenarios: [string, Record<string, any>, string, string][] = [
@@ -417,7 +434,7 @@ test('no-checks run still judges and tells the judge checks were skipped', async
   // Then
   assert.equal(result.judge.status, 'ok');
   assert.deepEqual(
-    result.requirements.map((r) => r.status),
+    result.judge.verdicts.map((v) => v.status),
     ['pass'],
   );
   assert.deepEqual(judged!.bundle.deterministic_checks, {

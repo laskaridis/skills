@@ -1,4 +1,14 @@
-import type { Execution, InvocationMode, RunOptions } from './types.ts';
+/**
+ * Runs an agent CLI as a child process.
+ *
+ * Responsibilities:
+ * - enforce the timeout and cancellation
+ * - capture the call's artifacts
+ * - classify its outcome
+ *
+ * @module
+ */
+
 import {
   spawn,
   type ChildProcessWithoutNullStreams,
@@ -8,15 +18,112 @@ import { createWriteStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { finished } from 'node:stream/promises';
-import { getAgent, parseCodexTrace, type Trace } from './agents.ts';
-import { writeJSON } from './utils.ts';
+import {
+  getAgent,
+  parseCodexTrace,
+  type AgentName,
+  type InvocationMode,
+  type Trace,
+} from './agents.ts';
+import { writeJSON, type JsonRecord } from './utils.ts';
 
+/**
+ * Outcome of one agent CLI invocation. `status` is 'ok' on success; any other
+ * value (e.g. 'cancelled') means `final_response` may be empty or unusable.
+ */
+export interface Execution {
+  status: string;
+  session_id?: string | null;
+  final_response: string;
+  observed_settings?: JsonRecord | null;
+  settings_note?: string;
+  exit_code?: number | null;
+  signal?: NodeJS.Signals | null;
+  spawn_error?: string | null;
+  duration_ms?: number;
+  [key: string]: unknown;
+}
+
+/** Settings for one agent invocation. */
+export interface ExecutionOptions {
+  /** Defaults to `DEFAULT_AGENT`. */
+  agent?: AgentName;
+  model: string;
+  judgeModel: string;
+  reasoning: string;
+  judgeReasoning: string;
+  /** Time limit in milliseconds; defaults to `TIMEOUT`. */
+  timeout?: number;
+  /** Aborting stops the CLI; if already aborted, nothing is started. */
+  signal?: AbortSignal;
+}
+
+/**
+ * Runs one agent invocation (`prompt` in `cwd`, with `directory` as the working
+ * data dir) and resolves to an `Execution`. Injectable to replace the real CLI.
+ */
+export type Transport = (
+  options: ExecutionOptions,
+  runtime: string,
+  cwd: string,
+  directory: string,
+  prompt: string,
+  mode?: InvocationMode,
+) => Promise<Execution>;
+
+/** Default time limit for one agent invocation, in milliseconds. */
 export const TIMEOUT = 10 * 60 * 1000;
 
-export const parseTrace = parseCodexTrace;
+/**
+ * Runs the selected agent CLI once and waits for it to finish.
+ *
+ * @param options Agent, model, reasoning, timeout and cancellation settings.
+ * @param runtime The agent's runtime directory.
+ * @param cwd Working directory of the CLI.
+ * @param directory Receives `prompt.txt`, `trace.jsonl`, `stderr.txt`,
+ *   `final.txt` and `execution.json`. Created if missing.
+ * @param prompt Text sent to the CLI on stdin.
+ * @param mode Marks a judge call and sets its output schema.
+ * @returns The outcome, with `status` 'ok', 'execution_error', 'timeout' or
+ *   'cancelled'. CLI failures are reported here rather than thrown. If `signal`
+ *   is already aborted, nothing is run or written.
+ */
+export async function invoke(
+  options: ExecutionOptions,
+  runtime: string,
+  cwd: string,
+  directory: string,
+  prompt: string,
+  mode: InvocationMode = {},
+): Promise<Execution> {
+  if (options.signal?.aborted) {
+    // The run was cancelled: never start another paid model call.
+    return { status: 'cancelled', final_response: '' };
+  }
+
+  const agent = getAgent(options.agent);
+  const { args, env } = await agent.args(options, runtime, directory, mode);
+  const execution = await _capture(agent.binary, args, {
+    cwd,
+    directory,
+    prompt,
+    env,
+    timeout: options.timeout ?? TIMEOUT,
+    signal: options.signal,
+    parse: agent.parseTrace,
+  });
+
+  execution.observed_settings = await agent.observedSettings(
+    runtime,
+    execution,
+  );
+  execution.settings_note = agent.settingsNote(execution.observed_settings);
+  await writeJSON(path.join(directory, 'execution.json'), execution);
+  return execution;
+}
 
 // Spawn without a shell. Kill the process group so timeout also stops tool children.
-export async function capture(
+async function _capture(
   command: string,
   args: string[],
   {
@@ -67,6 +174,7 @@ export async function capture(
 
   const kill = (signal: NodeJS.Signals) => {
     try {
+      /* v8 ignore next 3 -- Windows-only; not reachable through invoke() */
       if (platform === 'win32') {
         child.kill(signal);
       } else {
@@ -88,6 +196,7 @@ export async function capture(
   process.once('SIGTERM', onInterrupt);
   child.stdout.pipe(stdout);
   child.stderr.pipe(stderr);
+  /* v8 ignore next 5 -- stdin errors can't be provoked via invoke() */
   child.stdin.on('error', (error) => {
     if ((error as NodeJS.ErrnoException).code !== 'EPIPE') {
       spawnError = error.message;
@@ -157,47 +266,4 @@ export async function capture(
   await fs.writeFile(path.join(directory, 'final.txt'), finalResponse);
   await writeJSON(path.join(directory, 'execution.json'), result);
   return result;
-}
-
-export async function invoke(
-  options: Pick<
-    RunOptions,
-    | 'agent'
-    | 'model'
-    | 'judgeModel'
-    | 'reasoning'
-    | 'judgeReasoning'
-    | 'timeout'
-    | 'signal'
-  >,
-  runtime: string,
-  cwd: string,
-  directory: string,
-  prompt: string,
-  mode: InvocationMode = {},
-): Promise<Execution> {
-  if (options.signal?.aborted) {
-    // The run was cancelled: never start another paid model call.
-    return { status: 'cancelled', final_response: '' };
-  }
-
-  const agent = getAgent(options.agent);
-  const { args, env } = await agent.args(options, runtime, directory, mode);
-  const execution = await capture(agent.binary, args, {
-    cwd,
-    directory,
-    prompt,
-    env,
-    timeout: options.timeout ?? TIMEOUT,
-    signal: options.signal,
-    parse: agent.parseTrace,
-  });
-
-  execution.observed_settings = await agent.observedSettings(
-    runtime,
-    execution,
-  );
-  execution.settings_note = agent.settingsNote(execution.observed_settings);
-  await writeJSON(path.join(directory, 'execution.json'), execution);
-  return execution;
 }
