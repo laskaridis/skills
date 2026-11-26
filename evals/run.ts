@@ -1,31 +1,31 @@
 #!/usr/bin/env -S node --experimental-strip-types
-import type {
-  AgentName,
-  CaseDefinition,
-  Control,
-  RunOptions,
-  RunResults,
-  Transport,
-} from './lib/types.ts';
+import type { Control } from './lib/controls.ts';
+import type { CaseDefinition } from './lib/cases.ts';
+import type { Transport } from './lib/execution.ts';
 import * as fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCase, loadCases } from './lib/cases.ts';
 import { calibrate } from './lib/calibration.ts';
-import { loadJudgeControls, loadDeterministicChecksFor } from './lib/loader.ts';
-import type { Agent } from './lib/agents.ts';
+import { loadJudgeControls } from './lib/controls.ts';
+import { loadDeterministicChecksFor } from './lib/checks.ts';
+import type { AgentName } from './lib/agents.ts';
 import { AGENT_NAMES, DEFAULT_AGENT, getAgent } from './lib/agents.ts';
-import { TIMEOUT } from './lib/execution.ts';
-import { gitState, sha, snapshot, writeJSON } from './lib/utils.ts';
+import { writeJSON } from './lib/utils.ts';
 import {
   compareResults,
   infrastructureFailure,
   observedSettings,
   report,
 } from './lib/reporting.ts';
-import { preflight } from './lib/preflight.ts';
-import { runCase } from './lib/run-case.ts';
+import { preflight, type PreflightOptions } from './lib/preflight.ts';
+import {
+  buildRunResults,
+  type ResultsOptions,
+  type RunResults,
+} from './lib/results.ts';
+import { runCase, type CaseOptions } from './lib/run-case.ts';
 import {
   busy,
   printCalibration,
@@ -33,6 +33,13 @@ import {
   printHeader,
   printSummary,
 } from './lib/ui.ts';
+
+/** Resolved settings for an eval run, including optional injectable transport and checks. */
+export interface RunOptions
+  extends CaseOptions, PreflightOptions, ResultsOptions {
+  create?: boolean;
+  help?: boolean;
+}
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -162,111 +169,6 @@ export function argumentsFor(argv: string[]): RunOptions {
   return options;
 }
 
-const SUITE_FILES = ['checks.ts', 'run.ts', 'README.md'];
-
-// Hashes the live sources a run depends on, with the same rejection of
-// non-regular files that copying them would apply.
-async function hashTree(
-  root: string,
-  prefix = '',
-): Promise<Record<string, string>> {
-  const hashes: Record<string, string> = {};
-
-  for (const [file, hash] of Object.entries(await snapshot(root))) {
-    if (hash === 'NON_REGULAR_FILE') {
-      throw new Error(`Non-regular input file: ${path.join(root, file)}`);
-    }
-
-    hashes[prefix + file] = hash;
-  }
-
-  return hashes;
-}
-
-async function inputsSnapshot(
-  suite: string,
-  grading: string,
-): Promise<Record<string, string>> {
-  const controls = path.join(suite, 'judge-controls');
-  const hashes = {
-    ...(await hashTree(grading, 'grading/')),
-    ...(await hashTree(path.join(suite, 'cases'), 'cases/')),
-    // judge-controls/ is optional.
-    ...(await fs.access(controls).then(
-      () => hashTree(controls, 'judge-controls/'),
-      () => ({}),
-    )),
-  };
-
-  for (const name of SUITE_FILES) {
-    try {
-      const file = path.join(suite, name);
-
-      if (!(await fs.lstat(file)).isFile()) {
-        throw new Error(`Expected ordinary suite file: ${file}`);
-      }
-
-      hashes[`suite/${name}`] = sha(await fs.readFile(file));
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
-        throw error;
-      }
-    }
-  }
-
-  return hashes;
-}
-
-export interface RunResultsSource {
-  options: RunOptions;
-  agent: Agent;
-  runId: string;
-  cliVersion: string;
-  // Live suite directory; options.skill and options.grading point at live sources.
-  suite: string;
-}
-
-export async function buildRunResults({
-  options,
-  agent,
-  runId,
-  cliVersion,
-  suite,
-}: RunResultsSource): Promise<RunResults> {
-  const skillHash = options.noSkill
-    ? 'none'
-    : sha(JSON.stringify(await hashTree(options.skill)));
-  const inputsHash = sha(
-    JSON.stringify(await inputsSnapshot(suite, options.grading)),
-  );
-
-  return {
-    format_version: 2,
-    skill: options.skillName,
-    run_id: runId,
-    selection: { case: options.case ?? null },
-    skill_hash: skillHash,
-    inputs_hash: inputsHash,
-    harness_git: gitState(REPO),
-    settings: {
-      agent: agent.name,
-      skill_mode: options.noSkill ? 'none' : 'installed',
-      checks_mode: options.noChecks ? 'skipped' : 'run',
-      model: options.model,
-      judge_model: options.judgeModel,
-      reasoning: options.reasoning,
-      judge_reasoning: options.judgeReasoning,
-      cli_version: cliVersion,
-      node_version: process.version,
-      platform: `${process.platform}/${process.arch}`,
-      timeout_ms: TIMEOUT,
-      ...agent.settings(),
-      runs_per_case: 1,
-    },
-    cases: [],
-  };
-}
-
 export interface SuiteRun {
   // options.signal cancels the run: no new case or calibration starts after it.
   options: RunOptions;
@@ -375,6 +277,7 @@ export async function main(
     runId,
     cliVersion,
     suite,
+    repo: REPO,
   });
 
   const persist = async () => {

@@ -124,7 +124,7 @@ Artifacts are Git-ignored:
 ```text
 skills/<skill>/artifacts/<run-id>/
   report.md                 # Findings and evidence links
-  results.json              # Format-version-2 results for tools/comparison
+  results.json              # Format-version-3 results for tools/comparison
   <case>/
     result.json
     workspace/              # Final files
@@ -162,14 +162,15 @@ pnpm eval plan --skill /path/to/candidate/plan --model YOUR_MODEL \
 
 The comparison (in the report and `results.json`) matches skill, case ID, and
 requirement ID, and separately reports pass/fail changes, availability changes,
-and added/removed cases and requirements. With `--case`, other baseline cases are
-excluded rather than reported as removed. Changes to requirement wording, skill
-contents, harness code, or runtime settings can change what is being measured, so
-read the limitations alongside the findings. Harness code is compared through the
-recorded `harness_git` state: a limitation is reported when the commits differ,
-when either run had a dirty working tree (the commit then does not identify the
+and added/removed cases and requirements. Requirements are compared only when
+both judges succeeded. With `--case`, other baseline cases are excluded rather
+than reported as removed. Changes to case inputs, skill contents, harness code,
+or runtime settings can change what is being measured, so read the limitations
+alongside the findings. Harness code is compared through the recorded
+`harness_git` state: a limitation is reported when the commits differ, when
+either run had a dirty working tree (the commit then does not identify the
 harness code), or when the revision is unknown or missing (for example, results
-recorded before it existed). Only version-2 results are accepted.
+recorded before it existed). Only version-3 results are accepted.
 
 ## Measuring the skill's value
 

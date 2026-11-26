@@ -1,11 +1,37 @@
-import type { RunOptions, RunResults } from './types.ts';
+/**
+ * Fails a run early, before any paid model call.
+ *
+ * Responsibilities:
+ * - validate settings, cases, checks, controls, baseline and skill
+ * - confirm the agent CLI is available
+ *
+ * @module
+ */
+
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { loadCases } from './cases.ts';
-import { loadJudgeControls, loadDeterministicChecksFor } from './loader.ts';
+import { loadJudgeControls } from './controls.ts';
+import { loadDeterministicChecksFor } from './checks.ts';
 import { readJSON } from './utils.ts';
-import { normalizeResults } from './reporting.ts';
-import { getAgent } from './agents.ts';
+import { normalizeResults, type RunResults } from './results.ts';
+import { getAgent, type AgentName } from './agents.ts';
+
+/** The settings validated before a run. */
+export interface PreflightOptions {
+  agent?: AgentName;
+  reasoning: string;
+  judgeReasoning: string;
+  skillName: string;
+  skill: string;
+  /** Baseline run: the skill is neither installed nor invoked; skill is ''. */
+  noSkill?: boolean;
+  /** The suite's checks are not loaded; checks are recorded as skipped. */
+  noChecks?: boolean;
+  case?: string;
+  calibrate?: boolean;
+  compare?: string;
+}
 
 export interface Preflight {
   definedCases: Awaited<ReturnType<typeof loadCases>>;
@@ -40,7 +66,7 @@ async function validateSkillDir(skill: string) {
 
 // Resolves every case, hook, baseline, control, and tool before any model call.
 export async function preflight(
-  options: RunOptions,
+  options: PreflightOptions,
   suite: string,
 ): Promise<Preflight> {
   const agent = getAgent(options.agent);

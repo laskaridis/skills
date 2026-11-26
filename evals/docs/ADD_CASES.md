@@ -102,7 +102,7 @@ Use `evals/skills/<skill>/checks.ts` for conditions better verified exactly: val
 required paths, unchanged fixtures. Export `checkCase`:
 
 ```ts
-import type { CheckContext } from '../../lib/types.ts';
+import type { CheckContext } from '../../lib/checks.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';

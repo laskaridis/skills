@@ -66,14 +66,13 @@ const finding = (id: string, state: 'pass' | 'fail' | 'ungradable'): any => ({
 const caseResult = (
   execution: string,
   checks: string,
-  requirements: any[],
-  extra: any = {},
+  verdicts: any[],
+  { judge, ...extra }: any = {},
 ): any => ({
   case: 'one',
   execution: { status: execution, calls: [] },
   checks: { status: checks, failures: [] },
-  judge: { status: 'ok' },
-  requirements,
+  judge: { status: 'ok', ...judge, verdicts },
   ...extra,
 });
 
@@ -324,6 +323,19 @@ test('printCase reports ungradable requirements as a warning', () => {
   assert.match(lines[4], /⚠ a/);
 });
 
+test('printCase reports requirements as ungradable when the judge failed', () => {
+  // Given
+  const lines = capture();
+  const result = caseResult('ok', 'pass', [], { judge: { status: 'timeout' } });
+
+  // When
+  printCase(result);
+
+  // Then
+  assert.match(lines[3], /⚠ requirements\s+ungradable/);
+  assert.equal(lines.length, 4);
+});
+
 test('printCase handles an empty requirement list', () => {
   // Given
   const lines = capture();
@@ -375,7 +387,7 @@ test('printCalibration reports agreement for passing controls', () => {
       control(
         'good',
         'pass',
-        { status: 'ok', finding: { findings: [finding('a', 'pass')] } },
+        { status: 'ok', verdicts: [finding('a', 'pass')] },
         { a: 'pass' },
       ),
     ],
@@ -395,7 +407,12 @@ test('printCalibration reports a judge error with its status', () => {
   const calibration: any = {
     status: 'judge_error',
     controls: [
-      control('broken', 'judge_error', { status: 'timeout' }, { a: 'pass' }),
+      control(
+        'broken',
+        'judge_error',
+        { status: 'timeout', verdicts: [] },
+        { a: 'pass' },
+      ),
     ],
   };
 
@@ -417,7 +434,7 @@ test('printCalibration counts mismatched and missing verdicts on disagreement', 
         'grader_disagreement',
         {
           status: 'ok',
-          finding: { findings: [finding('a', 'fail'), finding('b', 'pass')] },
+          verdicts: [finding('a', 'fail'), finding('b', 'pass')],
         },
         { a: 'pass', b: 'pass', c: 'fail' },
       ),

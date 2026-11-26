@@ -1,4 +1,4 @@
-import type { RunOptions } from '../lib/types.ts';
+import type { RunOptions } from '../run.ts';
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import path from 'node:path';

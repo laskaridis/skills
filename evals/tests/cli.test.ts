@@ -306,7 +306,7 @@ test('orchestrator runs sorted cases and archives exact inputs without credentia
     ['a-first', 'z-last'],
   );
 
-  assert.equal(result!.results.format_version, 2);
+  assert.equal(result!.results.format_version, 3);
   assert.ok(result!.results.skill_hash);
   assert.equal(saved.cases.length, 2);
 

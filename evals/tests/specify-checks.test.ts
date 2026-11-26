@@ -5,7 +5,7 @@ import path from 'node:path';
 import { checkCase, SPEC } from '../skills/specify/checks.ts';
 import { snapshot } from '../lib/utils.ts';
 import { loadCases } from '../lib/cases.ts';
-import { loadJudgeControls } from '../lib/loader.ts';
+import { loadJudgeControls } from '../lib/controls.ts';
 import { EVALS } from './helpers.ts';
 
 const roots: string[] = [];

@@ -41,6 +41,57 @@ evals/
   tests/                 Evaluation harness tests
 ```
 
+## Dependencies
+
+Imports between `run.ts` and the `lib/` modules. An arrow points from the
+importer to the imported module. Dotted arrows are type-only imports.
+`utils.ts`, the shared helper module, is left out to reduce clutter.
+
+```mermaid
+flowchart TD
+  run[run.ts]
+  agents[agents.ts]
+  calibration[calibration.ts]
+  cases[cases.ts]
+  checks[checks.ts]
+  controls[controls.ts]
+  execution[execution.ts]
+  judging[judging.ts]
+  preflight[preflight.ts]
+  reporting[reporting.ts]
+  results[results.ts]
+  runCase[run-case.ts]
+  ui[ui.ts]
+
+  run --> agents & calibration & cases & checks & controls & preflight
+  run --> reporting & results & runCase & ui
+  run -.-> execution
+
+  preflight --> agents & cases & checks & controls & results
+
+  runCase --> agents & execution & judging
+  runCase -.-> cases & checks
+
+  calibration --> judging
+  calibration -.-> cases & controls
+
+  judging --> execution
+  judging -.-> cases
+
+  execution --> agents
+
+  controls -.-> cases & judging
+
+  results --> execution
+  results -.-> agents & calibration & reporting & runCase
+
+  reporting --> results
+  reporting -.-> runCase
+
+  ui --> reporting
+  ui -.-> calibration & execution & judging & results & runCase
+```
+
 ## Execution flow
 
 ```
@@ -140,7 +191,7 @@ Each `CaseResult` has independent channels:
 | `execution`      | `ok`, `timeout`, `execution_error`, `not_run`                     |
 | `checks`         | `pass`, `fail`, `error`, `not_run`, `skipped`                     |
 | `judge`          | `ok`, `invalid_response`, `timeout`, `execution_error`, `not_run` |
-| `requirements[]` | `pass`, `fail`, `ungradable` (with evidence)                      |
+| `judge.verdicts` | `pass`, `fail`, `ungradable` (with evidence)                      |
 
-If the agent or judge fails, requirements are marked `ungradable`, not `fail`,
-so a judge failure is never counted as a quality failure.
+If the agent or judge fails, there are no verdicts, so neither is ever counted
+as a quality failure.

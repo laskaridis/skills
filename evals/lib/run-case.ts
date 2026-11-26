@@ -1,9 +1,16 @@
-import type {
-  CaseDefinition,
-  CaseResult,
-  RunOptions,
-  Snapshot,
-} from './types.ts';
+/**
+ * Runs one case from setup to result.
+ *
+ * Responsibilities:
+ * - set up an isolated workspace
+ * - invoke the agent, then the deterministic checks and the judge
+ * - archive the workspace and write `result.json`
+ *
+ * @module
+ */
+
+import type { CaseDefinition } from './cases.ts';
+import type { CheckCase, CheckResult } from './checks.ts';
 import * as fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -17,36 +24,36 @@ import {
   readablePath,
   snapshot,
   writeJSON,
+  type Snapshot,
 } from './utils.ts';
 import { getAgent } from './agents.ts';
-import { invoke } from './execution.ts';
-import { judge, unavailable } from './judging.ts';
+import { invoke, type Execution } from './execution.ts';
+import { judge, type JudgeOptions, type JudgeResult } from './judging.ts';
 
-// Text and coding skills can edit any fixture. The optional suite validator owns
-// protected-input and output-path rules; the harness has no plan-specific paths.
-export async function workspaceContents(
-  workspace: string,
-  skill: string,
-  skillDir = '.agents/skills',
-) {
-  const contents: Record<string, string> = {};
-  const installed = `${skillDir}/${skill}/`;
+/** Settings for running one case. */
+export interface CaseOptions extends JudgeOptions {
+  skillName: string;
+  skill: string;
+  /** Baseline run: the skill is neither installed nor invoked; skill is ''. */
+  noSkill?: boolean;
+  /** The suite's checks are not loaded; checks are recorded as skipped. */
+  noChecks?: boolean;
+  /** The suite's deterministic checks, if it has any. */
+  checkCase?: CheckCase;
+}
 
-  for (const file of await files(workspace)) {
-    if (file.startsWith(installed)) {
-      continue;
-    }
-
-    contents[file] = (await readablePath(workspace, file))
-      ? await fs.readFile(path.join(workspace, file), 'utf8')
-      : '[non-regular or unsafe artifact]';
-  }
-
-  return contents;
+/** Full result of one case: agent calls, checks and the judge result with its verdicts. */
+export interface CaseResult {
+  case: string;
+  input_hash?: string;
+  execution: { status: string; calls: Execution[]; error?: string };
+  checks: CheckResult;
+  judge: JudgeResult;
+  harness_error?: string;
 }
 
 export async function runCase(
-  options: RunOptions,
+  options: CaseOptions,
   runtime: string,
   runDirectory: string,
   item: CaseDefinition,
@@ -63,11 +70,7 @@ export async function runCase(
     input_hash: item.inputHash,
     execution: { status: 'not_run', calls: [] },
     checks: { status: 'not_run', failures: [] },
-    judge: { status: 'not_run' },
-    requirements: unavailable(
-      item.requirements,
-      'Execution has not completed.',
-    ),
+    judge: { status: 'not_run', verdicts: [] },
   };
   let initial: Snapshot | null = null;
   let finalResponse = '';
@@ -138,7 +141,7 @@ export async function runCase(
 
     gitInit(workspace);
     initial = await snapshot(workspace);
-    const inputFiles = await workspaceContents(
+    const inputFiles = await _workspaceContents(
       workspace,
       options.skillName,
       agent.skillDir,
@@ -163,10 +166,6 @@ export async function runCase(
     finalResponse = execution.final_response;
 
     if (execution.status !== 'ok') {
-      result.requirements = unavailable(
-        item.requirements,
-        `Agent ${execution.status}; see agent.`,
-      );
       return result;
     }
 
@@ -180,7 +179,7 @@ export async function runCase(
         input_files: inputFiles,
         prompt: item.prompt,
         final_response: finalResponse,
-        workspace_files: await workspaceContents(
+        workspace_files: await _workspaceContents(
           workspace,
           options.skillName,
           agent.skillDir,
@@ -188,18 +187,6 @@ export async function runCase(
         deterministic_checks: result.checks,
       },
     );
-
-    if (result.judge.status === 'ok') {
-      result.requirements = result.judge.finding!.findings.map((f) => ({
-        ...f,
-        text: item.requirements.find((r) => r.id === f.id)!.text,
-      }));
-    } else {
-      result.requirements = unavailable(
-        item.requirements,
-        `Judge ${result.judge.status}; this is not a quality failure.`,
-      );
-    }
 
     return result;
   } catch (error: any) {
@@ -209,10 +196,6 @@ export async function runCase(
       result.execution.status = 'execution_error';
     }
 
-    result.requirements = unavailable(
-      item.requirements,
-      `Harness error: ${error.message}`,
-    );
     return result;
   } finally {
     try {
@@ -223,4 +206,27 @@ export async function runCase(
       await fs.rm(workspace, { recursive: true, force: true });
     }
   }
+}
+
+// Text and coding skills can edit any fixture. The optional suite validator owns
+// protected-input and output-path rules; the harness has no plan-specific paths.
+async function _workspaceContents(
+  workspace: string,
+  skill: string,
+  skillDir: string,
+) {
+  const contents: Record<string, string> = {};
+  const installed = `${skillDir}/${skill}/`;
+
+  for (const file of await files(workspace)) {
+    if (file.startsWith(installed)) {
+      continue;
+    }
+
+    contents[file] = (await readablePath(workspace, file))
+      ? await fs.readFile(path.join(workspace, file), 'utf8')
+      : '[non-regular or unsafe artifact]';
+  }
+
+  return contents;
 }

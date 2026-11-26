@@ -1,4 +1,4 @@
-import type { CheckContext, CheckResult, Snapshot } from '../../lib/types.ts';
+import type { CheckContext, CheckResult } from '../../lib/checks.ts';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -8,6 +8,7 @@ import {
   nonempty,
   exactKeys,
   object,
+  type Snapshot,
 } from '../../lib/utils.ts';
 
 const SPEC = 'specs/seat-reservation.spec.md';

@@ -10,7 +10,6 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['run.ts', 'lib/*.ts', 'skills/plan/checks.ts'],
-      exclude: ['lib/types.ts'],
       reporter: ['text', 'json', 'html'],
       thresholds: {
         lines: 100,

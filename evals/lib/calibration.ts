@@ -1,14 +1,37 @@
-import type {
-  CalibrationResult,
-  CaseDefinition,
-  Control,
-  RunOptions,
-} from './types.ts';
-import { judge } from './judging.ts';
+/**
+ * Checks the judge against known answers.
+ *
+ * Responsibilities:
+ * - judge each control specimen of a suite
+ * - compare the verdicts with the expected ones
+ *
+ * @module
+ */
+
+import type { Control } from './controls.ts';
+import type { CaseDefinition } from './cases.ts';
+import { judge, type JudgeOptions, type JudgeResult } from './judging.ts';
 import path from 'node:path';
 
+/**
+ * Result of judging known-answer controls. Overall `status` is 'pass',
+ * 'grader_disagreement', 'judge_error', 'unavailable' or 'harness_error'; `controls`
+ * is present only when controls were judged.
+ */
+export interface CalibrationResult {
+  status: string;
+  reason?: string;
+  controls?: {
+    id: string;
+    case: string;
+    expected: Control['expected'];
+    judge: JudgeResult;
+    status: string;
+  }[];
+}
+
 export async function calibrate(
-  options: RunOptions,
+  options: JudgeOptions,
   runtime: string,
   runDirectory: string,
   cases: CaseDefinition[],
@@ -58,9 +81,7 @@ export async function calibrate(
         status:
           result.status !== 'ok'
             ? 'judge_error'
-            : result.finding!.findings.every(
-                  (f) => f.status === control.expected[f.id],
-                )
+            : result.verdicts.every((f) => f.status === control.expected[f.id])
               ? 'pass'
               : 'grader_disagreement',
       });
