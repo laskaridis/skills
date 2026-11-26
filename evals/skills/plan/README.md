@@ -103,9 +103,10 @@ failures are reported separately from quality findings.
 
 ## Calibration
 
-[judge-tests.ts](judge-tests.ts) holds two controls for `complete`. Each is a
-prepared output (design document, plan JSON and final response) with an expected
-verdict for every requirement. A calibrated `complete` run therefore makes four
+[judge-controls/controls.yml](judge-controls/controls.yml) declares two controls
+for `complete`. Each is a prepared output (design document and plan JSON under
+`judge-controls/fixtures/<control>/skill-output-files/`, and the final response in
+`final-message.md`) with an expected verdict for every requirement. A calibrated `complete` run therefore makes four
 LLM calls: the agent, the judge, and one judge call per control.
 
 `degraded-plan` is a plan that is structurally valid, with labels covering every
@@ -121,7 +122,7 @@ criterion, plus a one-paragraph design. Their content:
 All requirements are expected to fail except `design_plan_consistent`: the two
 artifacts are bad but agree with each other.
 
-`over-layered-design` pairs a good plan (`goodPlan()`) with a design that is
+`over-layered-design` pairs a good plan with a design that is
 complete and well formed but adds speculative layers the spec does not require:
 a repository abstraction with a pluggable storage interface, a pluggable
 policy/strategy layer, and an internal event bus with no subscribers, each
@@ -133,8 +134,6 @@ shows the judge passes a good plan and a clear, well-formed design, and fails an
 over-engineered one for its content rather than for missing structure. Every
 dependency in the design is explicit and every responsibility described, so
 boundary and coupling findings would indicate accidental gaps in the control.
-`goodDesign()` is the
-proportionate single-module counterpart of that design; the offline tests
-check it with the plan's structure checks.
+The offline tests check both controls' plans with the plan's structure checks.
 
 Disagreements are preserved.

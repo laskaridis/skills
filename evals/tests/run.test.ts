@@ -178,6 +178,29 @@ test('buildRunResults is stable and reflects grading and suite file changes', as
   );
 });
 
+test('buildRunResults reflects judge control declaration and fixture changes', async (t) => {
+  // Given
+  const { build, suite } = await liveRun(t);
+  const before = await build();
+
+  // When
+  await put(suite, 'judge-controls/controls.yml', 'version: 1');
+
+  const afterDeclaration = await build();
+
+  await put(
+    suite,
+    'judge-controls/fixtures/prepared/final-message.md',
+    'Changed',
+  );
+
+  const afterFixture = await build();
+
+  // Then
+  assert.notEqual(afterDeclaration.inputs_hash, before.inputs_hash);
+  assert.notEqual(afterFixture.inputs_hash, afterDeclaration.inputs_hash);
+});
+
 test('buildRunResults ignores run artifacts stored in the suite', async (t) => {
   // Given
   const { build, suite } = await liveRun(t);

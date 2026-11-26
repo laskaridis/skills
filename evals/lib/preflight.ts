@@ -2,7 +2,7 @@ import type { RunOptions, RunResults } from './types.ts';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { loadCases } from './cases.ts';
-import { loadJudgeTests, loadDeterministicChecksFor } from './loader.ts';
+import { loadJudgeControls, loadDeterministicChecksFor } from './loader.ts';
 import { readJSON } from './utils.ts';
 import { normalizeResults } from './reporting.ts';
 import { getAgent } from './agents.ts';
@@ -63,7 +63,7 @@ export async function preflight(
   }
 
   if (options.calibrate) {
-    await loadJudgeTests(suite, definedCases);
+    await loadJudgeControls(suite, definedCases);
   }
 
   const previous = await loadBaseline(options.compare);

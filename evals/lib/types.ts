@@ -123,6 +123,8 @@ export interface CaseResult {
 export interface Control {
   id: string;
   caseId: string;
+  // Why the specimen is good or bad; documentation only.
+  description?: string;
   generatedFiles: Record<string, string>;
   finalResponse: string;
   expected: Record<string, QualityStatus>;

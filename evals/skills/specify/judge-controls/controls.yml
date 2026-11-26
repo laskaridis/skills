@@ -1,0 +1,33 @@
+# Calibration checks both judge false negatives and false positives.
+version: 1
+controls:
+  correct-spec:
+    case: complete
+    description: >-
+      Golden specification that satisfies every criterion, so any failing
+      verdict is a judge false negative.
+    default: pass
+  combined-defects:
+    case: complete
+    description: >-
+      Packs one defect per criterion into one spec to minimize model calls.
+      US-001 is a storage-only story, not a vertical slice. AC-004 is vague,
+      making the reservation story unverifiable. The explicitly rejected
+      automatic waitlist is reinstated. Cancellation is omitted entirely,
+      breaking agreed scope completeness. An explicitly excluded
+      email-confirmation story is invented. The implicit signed-in-session
+      assumption is dropped. A concrete technical design (table, unique index,
+      row lock) is prescribed instead of behavior. Both unresolved items are
+      silently dropped instead of flagged.
+    default: fail
+  flat-requirements:
+    case: complete
+    description: >-
+      Same behavior as the correct spec, but organized as requirements grouped
+      by theme with all scenarios pooled in one section and no user stories.
+      This structural defect is incompatible with the story-level defects in
+      combined-defects, so it gets its own specimen.
+    default: pass
+    expect:
+      verifiable_stories: fail
+      vertical_stories: fail
