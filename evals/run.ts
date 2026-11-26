@@ -76,6 +76,11 @@ export function argumentsFor(argv: string[]): RunOptions {
       continue;
     }
 
+    if (arg === '--no-checks') {
+      options.noChecks = true;
+      continue;
+    }
+
     if (arg === '--create') {
       options.create = true;
       continue;
@@ -240,6 +245,7 @@ export async function buildRunResults({
     settings: {
       agent: agent.name,
       skill_mode: options.noSkill ? 'none' : 'installed',
+      checks_mode: options.noChecks ? 'skipped' : 'run',
       model: options.model,
       judge_model: options.judgeModel,
       reasoning: options.reasoning,
@@ -317,7 +323,7 @@ export async function main(
 
   if (options.help) {
     console.log(
-      'pnpm eval SKILL --model MODEL [--agent codex|claude] [--skill DIR | --no-skill] [--case CASE_ID] [--judge-model MODEL] [--reasoning high] [--judge-reasoning high] [--compare RESULTS.json] [--calibrate]\n       pnpm eval SKILL --case CASE_ID --create',
+      'pnpm eval SKILL --model MODEL [--agent codex|claude] [--skill DIR | --no-skill] [--no-checks] [--case CASE_ID] [--judge-model MODEL] [--reasoning high] [--judge-reasoning high] [--compare RESULTS.json] [--calibrate]\n       pnpm eval SKILL --case CASE_ID --create',
     );
     return;
   }
@@ -351,7 +357,9 @@ export async function main(
   options.grading = path.join(HERE, 'grading');
   // Everything loads from the live sources; skill_hash and inputs_hash record
   // which versions this run used.
-  options.checkCase = (await loadDeterministicChecksFor(suite))?.checkCase;
+  options.checkCase = options.noChecks
+    ? undefined
+    : (await loadDeterministicChecksFor(suite))?.checkCase;
   const controls = options.calibrate
     ? await loadJudgeTests(suite, cases)
     : null;

@@ -110,6 +110,28 @@ test('buildRunResults records a no-skill run without hashing a skill', async (t)
   assert.equal(results.skill_hash, 'none');
 });
 
+test('buildRunResults records that the suite checks ran', async (t) => {
+  // Given
+  const { build } = await liveRun(t);
+
+  // When
+  const results = await build();
+
+  // Then
+  assert.equal(results.settings.checks_mode, 'run');
+});
+
+test('buildRunResults records a no-checks run', async (t) => {
+  // Given
+  const { build } = await liveRun(t, { noChecks: true });
+
+  // When
+  const results = await build();
+
+  // Then
+  assert.equal(results.settings.checks_mode, 'skipped');
+});
+
 test('buildRunResults hashes the skill apart from the other inputs', async (t) => {
   // Given
   const { build, root, suite } = await liveRun(t);

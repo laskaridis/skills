@@ -84,6 +84,16 @@ function harnessLimitation(
   return undefined;
 }
 
+/**
+ * Compares a baseline run with the current run, matching cases by `skill/case`.
+ *
+ * @param previousValue Baseline results (parsed `results.json` from `--compare`).
+ * @param currentValue Results of the current run.
+ * @returns Status changes per channel and requirement; added, removed and
+ *   excluded cases and requirements; and limitations where the runs are not
+ *   like-for-like.
+ * @throws If either value is not valid version-2 results.
+ */
 export function compareResults(
   previousValue: unknown,
   currentValue: unknown,
@@ -110,11 +120,12 @@ export function compareResults(
     limitations.push(harness);
   }
 
-  // Results recorded before --agent and --no-skill existed were produced by
-  // Codex with the skill installed.
+  // Results recorded before --agent, --no-skill and --no-checks existed were
+  // produced by Codex with the skill installed and the checks run.
   const withDefaults = (settings: RunResults['settings']) => ({
     agent: 'codex',
     skill_mode: 'installed',
+    checks_mode: 'run',
     ...settings,
   });
   const previousSettings = withDefaults(previous.settings);
@@ -134,6 +145,15 @@ export function compareResults(
 
     limitations.push(
       `With/without-skill comparison: ${sides}; changes reflect the skill's presence, not an edit to it`,
+    );
+  }
+
+  if (previousSettings.checks_mode !== currentSettings.checks_mode) {
+    const side =
+      previousSettings.checks_mode === 'skipped' ? 'baseline' : 'current';
+
+    limitations.push(
+      `Checks were skipped in the ${side} run; checks changes are not comparable`,
     );
   }
 
@@ -307,6 +327,9 @@ export function report(results: RunResults) {
     results.settings.skill_mode === 'none'
       ? 'Skill: none (baseline run, skill not installed or invoked).'
       : `Skill SHA-256: \`${results.skill_hash}\`.`,
+    ...(results.settings.checks_mode === 'skipped'
+      ? ['Checks: skipped (--no-checks).']
+      : []),
     '',
     '| Case | Execution | Checks | Judge execution | Requirements |',
     '|---|---|---|---|---|',

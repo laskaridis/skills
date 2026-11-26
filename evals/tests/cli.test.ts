@@ -77,6 +77,18 @@ test('no-skill flag cannot be combined with a skill directory', () => {
   assert.throws(act, /--no-skill and --skill are mutually exclusive/);
 });
 
+test('no-checks flag skips the suite checks and keeps the skill', () => {
+  // When
+  const options = argumentsFor(['plan', '--model', 'agent', '--no-checks']);
+  const defaults = argumentsFor(['plan', '--model', 'agent']);
+
+  // Then
+  assert.equal(options.noChecks, true);
+  assert.equal(options.skill, path.resolve(EVALS, '../skills/plan'));
+
+  assert.ok(!defaults.noChecks);
+});
+
 test('create flag needs a case but no model', () => {
   // When
   const options = argumentsFor(['plan', '--case', 'x', '--create']);
@@ -167,6 +179,7 @@ test('CLI exposes help, rejects removed self-test and missing model', () => {
     if (args[0] === '--help') {
       assert.ok(!result.stdout.includes('--self-test'));
       assert.match(result.stdout, /\[--skill DIR \| --no-skill\]/);
+      assert.match(result.stdout, /\[--no-checks\]/);
     }
   }
 });
@@ -222,6 +235,49 @@ test('main help does not require a suite', async () => {
 
   // Then
   assert.equal(result, undefined);
+});
+
+test('orchestrator with no-checks never runs the suite checks', async (t) => {
+  // Given
+  const { args, deps, suite } = await environment(t);
+
+  await put(
+    suite,
+    'checks.ts',
+    "export function checkCase() { throw new Error('checks ran'); }",
+  );
+
+  // When
+  const result = await main(
+    [...args, '--no-checks', '--case', 'a-first'],
+    deps,
+  );
+  const saved = await readJSON(path.join(result!.directory, 'results.json'));
+
+  // Then
+  assert.equal(saved.settings.checks_mode, 'skipped');
+  assert.deepEqual(saved.cases[0].checks, { status: 'skipped', failures: [] });
+  assert.equal(saved.cases[0].harness_error, undefined);
+});
+
+test('orchestrator with no-checks never loads the suite checks module', async (t) => {
+  // Given
+  const { args, deps, suite } = await environment(t);
+
+  await put(suite, 'checks.ts', "throw new Error('checks loaded');");
+
+  // When
+  const result = await main(
+    [...args, '--no-checks', '--case', 'a-first'],
+    deps,
+  );
+
+  // Then
+  assert.equal(result!.results.settings.checks_mode, 'skipped');
+  assert.deepEqual(result!.results.cases[0].checks, {
+    status: 'skipped',
+    failures: [],
+  });
 });
 
 test('orchestrator runs sorted cases and archives exact inputs without credentials', async (t) => {

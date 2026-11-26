@@ -75,6 +75,8 @@ CLI args
 
 With `--no-skill` the skill is neither copied nor invoked: the workspace holds
 only fixtures and the prompt is `prompt.md` alone (`skill_mode: none`).
+With `--no-checks` the suite's `checkCase` is not invoked: each case's checks
+are `skipped` and the judge receives that status (`checks_mode: skipped`).
 
 `results.json` and `report.md` are rewritten after every case, so an
 interrupted run still leaves partial results. Suite checks and calibration
@@ -134,7 +136,7 @@ Each `CaseResult` has independent channels:
 | Channel          | Values                                                            |
 | ---------------- | ----------------------------------------------------------------- |
 | `execution`      | `ok`, `timeout`, `execution_error`, `not_run`                     |
-| `checks`         | `pass`, `fail`, `error`, `not_run`                                |
+| `checks`         | `pass`, `fail`, `error`, `not_run`, `skipped`                     |
 | `judge`          | `ok`, `invalid_response`, `timeout`, `execution_error`, `not_run` |
 | `requirements[]` | `pass`, `fail`, `ungradable` (with evidence)                      |
 

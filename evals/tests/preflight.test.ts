@@ -69,6 +69,20 @@ test('preflight rejects an invalid hooks module', async (t) => {
   await assert.rejects(act, /checks.ts must export checkCase/);
 });
 
+test('preflight does not load the hooks module for a no-checks run', async (t) => {
+  // Given
+  const { options, suite } = await environment(t);
+
+  await put(suite, 'checks.ts', "throw new Error('checks loaded');");
+  options.noChecks = true;
+
+  // When
+  const result = await preflight(options, suite);
+
+  // Then
+  assert.equal(result.cliVersion, 'fake-codex');
+});
+
 test('preflight validates controls only when calibrating', async (t) => {
   // Given
   const { options, suite } = await environment(t);

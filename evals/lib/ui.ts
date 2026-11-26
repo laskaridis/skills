@@ -101,12 +101,19 @@ export function printHeader(
   results: Pick<RunResults, 'skill' | 'settings'>,
   directory: string,
 ) {
-  const { agent, skill_mode, model, judge_model, judge_reasoning } =
-    results.settings;
+  const {
+    agent,
+    skill_mode,
+    checks_mode,
+    model,
+    judge_model,
+    judge_reasoning,
+  } = results.settings;
   const baseline = skill_mode === 'none' ? ' · no skill' : '';
+  const noChecks = checks_mode === 'skipped' ? ' · no checks' : '';
 
   console.log(
-    `${paint(['bold', 'cyan'], '▶')} ${paint('bold', results.skill)}  ${agent ?? 'codex'} · ${model}${baseline}`,
+    `${paint(['bold', 'cyan'], '▶')} ${paint('bold', results.skill)}  ${agent ?? 'codex'} · ${model}${baseline}${noChecks}`,
   );
   console.log(dim(`  judge ${judge_model} · reasoning ${judge_reasoning}`));
   console.log(dim(`  artifacts  ${directory}`));
@@ -368,7 +375,7 @@ export function printSummary(
       failed++;
     } else if (
       c.execution.status === 'ok' &&
-      c.checks.status === 'pass' &&
+      ['pass', 'skipped'].includes(c.checks.status) &&
       c.requirements.length > 0 &&
       c.requirements.every((r) => r.status === 'pass')
     ) {
