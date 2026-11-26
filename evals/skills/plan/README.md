@@ -17,8 +17,7 @@ directory.
 ## Cases
 
 Each case has `fixtures/specs/seat-reservation.spec.md` and a
-`fixtures/ARCHITECTURE.md` (identical across cases) holding the project's
-standing conventions (language, concurrency, errors, time, testing, design).
+`fixtures/ARCHITECTURE.md` (identical across cases) holding the project's standing conventions.
 It closes technical questions without prescribing this feature's modules. The `ambiguous` `prompt.md` is the single line
 `Produce an implementation plan for specs/seat-reservation.spec.md`. The
 `complete` prompt asks for a design document and a task plan saved alongside the

@@ -107,7 +107,7 @@ ${DRIVERS}
 - Current time comes from a time source supplied by the caller at construction and read once per operation. Tests set the time to exact boundaries; the trade-off is that callers must always provide a time source.
 - Each operation decides its outcome from consistent state first and applies the whole change as one step. Failures therefore never mutate state, at the cost of resolving the outcome before touching anything.
 - Reservations are never reused: cancelled reservations stay as history and a rebooking creates a fresh ID. Duplicate detection considers only the active reservation for an attendee and event.
-- Outcomes are returned as values (never thrown, per ARCHITECTURE.md) from a closed set of success states and the stable error codes EVENT_NOT_FOUND, EVENT_STARTED, CAPACITY_EXCEEDED and RESERVATION_NOT_FOUND, so callers and tests can distinguish them without parsing messages.
+- Outcomes are returned as values from a closed set of success states and the stable error codes EVENT_NOT_FOUND, EVENT_STARTED, CAPACITY_EXCEEDED and RESERVATION_NOT_FOUND, so callers and tests can distinguish them without parsing messages.
 
 ## Alternatives considered
 
