@@ -29,5 +29,8 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "check": "pnpm lint:fix && pnpm format && pnpm lint && pnpm typecheck && pnpm test:coverage"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
   }
 }

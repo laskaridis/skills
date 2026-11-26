@@ -1,0 +1,24 @@
+version: 1
+controls:
+  degraded-plan:
+    case: complete
+    description: >-
+      Structurally plausible but semantically bad: criterion labels deliberately
+      hide omissions. The design and plan are both bad but agree with each other
+      (waitlist, email, cancellation checks before creation), so only their
+      consistency is expected to pass.
+    default: fail
+    expect:
+      design_plan_consistent: pass
+  over-layered-design:
+    case: complete
+    description: >-
+      The good plan with a design that adds speculative facade, repository,
+      policy-strategy and event-bus layers the specification never asks for.
+      The design is complete and well formed, with identifiable state
+      ownership, coordination, event data and time source, and explicit
+      contracts between layers. Only the speculative layers are wrong, so only
+      design_simplicity is expected to fail.
+    default: pass
+    expect:
+      design_simplicity: fail

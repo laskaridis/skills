@@ -87,7 +87,7 @@ test('preflight validates controls only when calibrating', async (t) => {
   // Given
   const { options, suite } = await environment(t);
 
-  await put(suite, 'judge-tests.ts', 'export const controls = [];');
+  await put(suite, 'judge-controls/controls.yml', 'version: 1\ncontrols: {}\n');
 
   // When
   const skipped = await preflight(options, suite);
@@ -98,7 +98,7 @@ test('preflight validates controls only when calibrating', async (t) => {
 
   // Then
   assert.equal(skipped.definedCases.length, 1);
-  await assert.rejects(act, /nonempty controls array/);
+  await assert.rejects(act, /at least one control/);
 });
 
 test('preflight rejects a malformed baseline', async (t) => {

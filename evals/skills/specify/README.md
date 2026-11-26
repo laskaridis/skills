@@ -30,7 +30,7 @@ pnpm eval specify --model YOUR_MODEL --case complete
 pnpm eval specify --model YOUR_MODEL --case complete --calibrate
 ```
 
-The three [calibration controls](judge-tests.ts) are one fully correct
+The three [calibration controls](judge-controls/controls.yml) are one fully correct
 reference spec (all eight criteria pass), one combined defective spec (all
 criteria fail), and one flat-requirements spec that is behaviorally correct but
 has no stories (`verifiable_stories` and `vertical_stories` fail). They run with `--calibrate` and consume

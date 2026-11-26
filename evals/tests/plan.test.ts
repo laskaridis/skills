@@ -5,15 +5,10 @@ import path from 'node:path';
 import { temporary, put, EVALS } from './helpers.ts';
 import { snapshot } from '../lib/utils.ts';
 import { checkCase, checkStructure } from '../skills/plan/checks.ts';
-import {
-  degradedPlan,
-  goodDesign,
-  goodPlan,
-  overLayeredDesign,
-  controls,
-} from '../skills/plan/judge-tests.ts';
 import { loadCases } from '../lib/cases.ts';
-import { validateControls } from '../lib/loader.ts';
+import { loadJudgeControls } from '../lib/loader.ts';
+
+const SUITE = path.join(EVALS, 'skills/plan');
 
 const SPEC = 'specs/seat-reservation.spec.md';
 
@@ -23,28 +18,44 @@ const DESIGN = 'specs/seat-reservation.design.md';
 
 const PLAN = 'specs/seat-reservation.plan.json';
 
+// Reads a file the skill produced for a judge control specimen.
+function controlOutput(control: string, file: string) {
+  return fs.readFile(
+    path.join(
+      SUITE,
+      'judge-controls/fixtures',
+      control,
+      'skill-output-files',
+      file,
+    ),
+    'utf8',
+  );
+}
+
+async function planControls() {
+  return (await loadJudgeControls(SUITE, await loadCases(SUITE, 'plan')))!;
+}
+
 async function setup(t: import('vitest').TestContext) {
   const root = await temporary(t);
 
   await put(
     root,
     SPEC,
-    await fs.readFile(
-      path.join(EVALS, 'skills/plan/cases/complete/fixtures', SPEC),
-    ),
+    await fs.readFile(path.join(SUITE, 'cases/complete/fixtures', SPEC)),
   );
 
   await put(
     root,
     ARCHITECTURE,
     await fs.readFile(
-      path.join(EVALS, 'skills/plan/cases/complete/fixtures', ARCHITECTURE),
+      path.join(SUITE, 'cases/complete/fixtures', ARCHITECTURE),
     ),
   );
   const initial = await snapshot(root);
 
   await put(root, DESIGN, '# Design');
-  const plan = degradedPlan();
+  const plan = JSON.parse(await controlOutput('degraded-plan', PLAN));
 
   plan.tasks = [plan.tasks[0]];
   return { root, initial, plan };
@@ -62,32 +73,37 @@ async function check(
 test('plan controls satisfy structure while encoding deliberate semantic failures', async (t) => {
   // Given
   const { root, initial } = await setup(t);
-  const cases = await loadCases(path.join(EVALS, 'skills/plan'), 'plan');
+  const degraded = JSON.parse(await controlOutput('degraded-plan', PLAN));
 
   // When
-  const result = await check(root, initial, degradedPlan());
+  const result = await check(root, initial, degraded);
   const verdict = await checkCase({
     workspace: root,
     initialSnapshot: initial,
   });
+  const controls = await planControls();
 
   // Then
   assert.equal(result.status, 'pass');
   assert.equal(verdict.status, 'pass');
 
-  assert.ok(degradedPlan().tasks[1].objective.includes('waitlist'));
+  assert.ok(degraded.tasks[1].objective.includes('waitlist'));
 
-  assert.doesNotThrow(() => validateControls(controls, cases));
+  assert.deepEqual(
+    controls.map((c) => c.id),
+    ['degraded-plan', 'over-layered-design'],
+  );
 });
 
-test('good plan passes structure next to a nonempty design', async (t) => {
+test('over-layered control plan passes structure next to its nonempty design', async (t) => {
   // Given
   const { root, initial } = await setup(t);
+  const plan = JSON.parse(await controlOutput('over-layered-design', PLAN));
 
-  await put(root, DESIGN, goodDesign());
+  await put(root, DESIGN, await controlOutput('over-layered-design', DESIGN));
 
   // When
-  const result = await check(root, initial, goodPlan());
+  const result = await check(root, initial, plan);
 
   // Then
   assert.deepEqual(result.failures, []);
@@ -106,8 +122,9 @@ test('plan validator accepts the exact expected context document', async (t) => 
   assert.equal(result.status, 'pass');
 });
 
-test('over-layered control pairs the good plan with an over-layered design that fails only simplicity', () => {
+test('over-layered control pairs a plan with an over-layered design that fails only simplicity', async () => {
   // Given
+  const controls = await planControls();
   const control = controls.find((c) => c.id === 'over-layered-design');
 
   // When
@@ -116,20 +133,18 @@ test('over-layered control pairs the good plan with an over-layered design that 
     .map(([id]) => id);
 
   // Then
-  assert.equal(controls.length, 2);
-
   assert.deepEqual(failing, ['design_simplicity']);
 
-  assert.equal(
-    control?.generatedFiles[PLAN],
-    JSON.stringify(goodPlan(), null, 2),
-  );
-  assert.equal(control?.generatedFiles[DESIGN], overLayeredDesign());
-  assert.notEqual(overLayeredDesign(), goodDesign());
+  assert.deepEqual(Object.keys(control?.generatedFiles ?? {}).sort(), [
+    DESIGN,
+    PLAN,
+  ]);
+  assert.match(control?.generatedFiles[DESIGN] ?? '', /Internal Event Bus/);
 });
 
-test('degraded control expects only design and plan consistency to pass', () => {
+test('degraded control expects only design and plan consistency to pass', async () => {
   // Given
+  const controls = await planControls();
   const control = controls.find((c) => c.id === 'degraded-plan');
 
   // When

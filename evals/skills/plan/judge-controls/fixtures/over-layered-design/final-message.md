@@ -1,0 +1,1 @@
+The design and plan are written to specs/seat-reservation.design.md and specs/seat-reservation.plan.json.

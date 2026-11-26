@@ -10,7 +10,14 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { argumentsFor, main } from '../run.ts';
-import { temporary, put, fakeCodex, fakeTransport, EVALS } from './helpers.ts';
+import {
+  temporary,
+  put,
+  putControl,
+  fakeCodex,
+  fakeTransport,
+  EVALS,
+} from './helpers.ts';
 import { readJSON } from '../lib/utils.ts';
 
 test('arguments resolve defaults and all supported overrides', () => {
@@ -321,11 +328,7 @@ test('orchestrator compares baseline and single selection still calibrates all c
   );
   await put(suite, 'README.md', 'Suite');
   await put(suite, 'run.ts', '// entry');
-  await put(
-    suite,
-    'judge-tests.ts',
-    "export const controls = [{id:'prepared',caseId:'z-last',generatedFiles:{},finalResponse:'Done',expected:{accurate:'pass'}}];",
-  );
+  await putControl(suite, 'z-last');
 
   const baseline = await main(args, deps);
 
@@ -422,7 +425,8 @@ for (const [name, mutate, extra] of [
   ['nonregular hook', (e) => fs.mkdir(path.join(e.suite, 'checks.ts')), []],
   [
     'bad control',
-    (e) => put(e.suite, 'judge-tests.ts', 'export const controls=[];'),
+    (e) =>
+      put(e.suite, 'judge-controls/controls.yml', 'version: 1\ncontrols: {}\n'),
     ['--calibrate'],
   ],
   [
@@ -541,11 +545,7 @@ test('SIGTERM during the first case cancels the whole suite', async (t) => {
   const initialInt = process.listenerCount('SIGINT');
   const initialTerm = process.listenerCount('SIGTERM');
 
-  await put(
-    suite,
-    'judge-tests.ts',
-    "export const controls = [{id:'prepared',caseId:'z-last',generatedFiles:{},finalResponse:'Done',expected:{accurate:'pass'}}];",
-  );
+  await putControl(suite, 'z-last');
   deps.transport = fakeTransport(
     {
       onCall: ({ stage }) => {

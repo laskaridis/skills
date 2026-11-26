@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCase, loadCases } from './lib/cases.ts';
 import { calibrate } from './lib/calibration.ts';
-import { loadJudgeTests, loadDeterministicChecksFor } from './lib/loader.ts';
+import { loadJudgeControls, loadDeterministicChecksFor } from './lib/loader.ts';
 import type { Agent } from './lib/agents.ts';
 import { AGENT_NAMES, DEFAULT_AGENT, getAgent } from './lib/agents.ts';
 import { TIMEOUT } from './lib/execution.ts';
@@ -162,7 +162,7 @@ export function argumentsFor(argv: string[]): RunOptions {
   return options;
 }
 
-const SUITE_FILES = ['checks.ts', 'judge-tests.ts', 'run.ts', 'README.md'];
+const SUITE_FILES = ['checks.ts', 'run.ts', 'README.md'];
 
 // Hashes the live sources a run depends on, with the same rejection of
 // non-regular files that copying them would apply.
@@ -187,9 +187,15 @@ async function inputsSnapshot(
   suite: string,
   grading: string,
 ): Promise<Record<string, string>> {
+  const controls = path.join(suite, 'judge-controls');
   const hashes = {
     ...(await hashTree(grading, 'grading/')),
     ...(await hashTree(path.join(suite, 'cases'), 'cases/')),
+    // judge-controls/ is optional.
+    ...(await fs.access(controls).then(
+      () => hashTree(controls, 'judge-controls/'),
+      () => ({}),
+    )),
   };
 
   for (const name of SUITE_FILES) {
@@ -361,7 +367,7 @@ export async function main(
     ? undefined
     : (await loadDeterministicChecksFor(suite))?.checkCase;
   const controls = options.calibrate
-    ? await loadJudgeTests(suite, cases)
+    ? await loadJudgeControls(suite, cases)
     : null;
   const results = await buildRunResults({
     options,

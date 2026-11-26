@@ -4,6 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { checkCase, SPEC } from '../skills/specify/checks.ts';
 import { snapshot } from '../lib/utils.ts';
+import { loadCases } from '../lib/cases.ts';
+import { loadJudgeControls } from '../lib/loader.ts';
+import { EVALS } from './helpers.ts';
 
 const roots: string[] = [];
 
@@ -72,5 +75,29 @@ describe('specify output checks', () => {
 
     expect(failures).toContain('Non-regular file: ' + SPEC);
     expect(failures).toContain('Missing or unsafe specification: ' + SPEC);
+  });
+});
+
+describe('specify judge controls', () => {
+  it('fail only the story criteria for flat requirements', async () => {
+    // Given
+    const suite = path.join(EVALS, 'skills/specify');
+    const cases = await loadCases(suite, 'specify');
+
+    // When
+    const controls = await loadJudgeControls(suite, cases);
+    const flat = controls?.find((c) => c.id === 'flat-requirements');
+    const failing = Object.entries(flat?.expected ?? {})
+      .filter(([, status]) => status === 'fail')
+      .map(([id]) => id);
+
+    // Then
+    expect(controls?.map((c) => c.id)).toEqual([
+      'correct-spec',
+      'combined-defects',
+      'flat-requirements',
+    ]);
+    expect(failing).toEqual(['verifiable_stories', 'vertical_stories']);
+    expect(Object.keys(flat?.generatedFiles ?? {})).toEqual([SPEC]);
   });
 });

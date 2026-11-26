@@ -17,7 +17,7 @@ export async function calibrate(
   if (!controls) {
     return {
       status: 'unavailable',
-      reason: 'This suite has no judge-tests.ts controls.',
+      reason: 'This suite has no judge-controls/controls.yml.',
     };
   }
 

@@ -54,6 +54,17 @@ export async function put(
   return target;
 }
 
+// Declares one judge control, "prepared", that expects every criterion of the
+// case to pass for a final message of "Done" and no generated files.
+export async function putControl(suite: string, caseId: string) {
+  await put(
+    suite,
+    'judge-controls/controls.yml',
+    `version: 1\ncontrols:\n  prepared:\n    case: ${caseId}\n    default: pass\n`,
+  );
+  await put(suite, 'judge-controls/fixtures/prepared/final-message.md', 'Done');
+}
+
 export const requirements: Requirement[] = [
   { id: 'accurate', text: 'Accurate document.' },
 ];

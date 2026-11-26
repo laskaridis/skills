@@ -18,8 +18,8 @@ is missing (a mistyped skill is not created) or the case already exists.
 Suites live under `evals/skills/<skill>/`, one per skill in the repository-root
 `skills/<skill>/`. To add a suite for a skill that has none, create the empty
 directory first (`mkdir -p evals/skills/<skill>`), then scaffold its first case
-with `--create`. Optional `checks.ts`, `judge-tests.ts`, `run.ts` and `README.md`
-sit next to `cases/`; their imports of the harness use `../../lib/` and
+with `--create`. Optional `checks.ts`, `judge-controls/`, `run.ts` and `README.md`
+sit next to `cases/`; the TypeScript files' imports of the harness use `../../lib/` and
 `../../run.ts`.
 
 No manifest, schema, rubric, or validator is required. Keep fixtures small and
@@ -157,28 +157,46 @@ This also runs the agent cases. All suite controls run even with `--case`, using
 the judge model without an agent, so it adds model calls and usage. A suite
 without controls reports calibration as `unavailable`.
 
-Provide controls by exporting a nonempty `controls` array from
-`evals/skills/<skill>/judge-tests.ts`:
+Declare controls in `evals/skills/<skill>/judge-controls/`. The folder layout is
+the fixture specification:
 
-```ts
-import type { Control } from '../lib/types.ts';
-
-export const controls: Control[] = [
-  {
-    id: 'unchanged-readme',
-    caseId: 'stale-command',
-    generatedFiles: {},
-    finalResponse: 'Done; no changes needed.',
-    expected: { accurate_command: 'fail', focused_change: 'pass' },
-  },
-];
+```
+evals/skills/<skill>/judge-controls/
+  controls.yml
+  fixtures/
+    <control-id>/
+      final-message.md          # required: the skill's final response
+      skill-output-files/       # optional: files the skill produced
+        <workspace path>        # e.g. README.md
 ```
 
-Each control needs a unique safe `id`, an existing `caseId`, `generatedFiles`
-(paths to prepared text, overlaid on the case fixtures in the judge's evidence),
-a `finalResponse` string, and an `expected` status (`pass`, `fail`, or
-`ungradable`) for every requirement ID. A mismatch is reported as
-`grader_disagreement` with expected and observed statuses; judge failures remain
-separate. Passing controls alone does not establish judge reliability. See the
-[degraded plan control](../skills/plan/judge-tests.ts), which looks plausible but should
-fail all four semantic requirements.
+`controls.yml` holds one YAML document with a map of controls keyed by ID:
+
+```yaml
+version: 1
+controls:
+  unchanged-readme:
+    case: stale-command
+    description: Leaves the stale command in place but claims success.
+    default: pass # verdict for every criterion not listed under expect
+    expect:
+      accurate_command: fail
+```
+
+Each control needs a safe ID with a matching folder under `fixtures/` (and every
+folder needs a control), an existing `case`, and a `default` status (`pass`,
+`fail`, or `ungradable`). `expect` overrides the default for individual
+requirement IDs of that case, so adding a requirement needs no edits to the
+controls. `description` is optional but recommended: record why the specimen is
+good or bad. `final-message.md` must be nonempty and becomes the final response
+exactly as written. Files under `skill-output-files/` are keyed by their path
+relative to it and overlaid on the case fixtures in the judge's evidence; omit
+the folder when the skill produces no files. Case inputs come from the case's
+own `fixtures/`, so do not copy them here. Fixtures are frozen specimens:
+editing a case's inputs does not update them.
+
+A mismatch is reported as `grader_disagreement` with expected and observed
+statuses; judge failures remain separate. Passing controls alone does not
+establish judge reliability. See the
+[degraded plan control](../skills/plan/judge-controls/controls.yml), which looks
+plausible but should fail every requirement except design and plan consistency.

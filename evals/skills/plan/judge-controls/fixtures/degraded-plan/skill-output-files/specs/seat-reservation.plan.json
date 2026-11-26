@@ -1,0 +1,72 @@
+{
+  "specification_document": "specs/seat-reservation.spec.md",
+  "design_document": "specs/seat-reservation.design.md",
+  "context_documents": [
+    {
+      "path": "ARCHITECTURE.md",
+      "purpose": "Project's standing conventions for language, errors and testing."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "objective": "Verify rebooking and cancellation of existing reservations in isolation before reservation creation exists.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-001",
+        "US-002",
+        "US-003"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008",
+        "AC-009",
+        "AC-010",
+        "AC-011"
+      ],
+      "completion_criteria": [
+        "Implement correctly; all tests pass."
+      ],
+      "constraints": [],
+      "dependencies": []
+    },
+    {
+      "id": "TASK-002",
+      "objective": "Create reservations and add a waitlist with notification emails.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-001",
+        "US-002",
+        "US-003"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008",
+        "AC-009",
+        "AC-010",
+        "AC-011"
+      ],
+      "completion_criteria": [
+        "Implement correctly; all tests pass."
+      ],
+      "constraints": [
+        "Create src/ReservationManager.js with exactly three public methods reserveSeat(eventId, attendeeId), enqueueWaitlist(eventId, email), sendEmail(email). Use a two-pass for loop and a Map named seatIndex; no alternative layout is allowed."
+      ],
+      "dependencies": [
+        "TASK-001"
+      ]
+    }
+  ]
+}

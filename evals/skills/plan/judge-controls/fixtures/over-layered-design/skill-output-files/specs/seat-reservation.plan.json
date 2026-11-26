@@ -1,0 +1,166 @@
+{
+  "specification_document": "specs/seat-reservation.spec.md",
+  "design_document": "specs/seat-reservation.design.md",
+  "context_documents": [
+    {
+      "path": "ARCHITECTURE.md",
+      "purpose": "Project's standing conventions for language, errors and testing."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "objective": "A caller can reserve a seat for a preloaded event before it starts, and unknown or started events are refused, all under a test-controlled clock.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-001"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-001",
+        "AC-005",
+        "AC-010",
+        "AC-011"
+      ],
+      "completion_criteria": [
+        "With a controlled time one second before the start instant, reserving for an event with free seats returns an active reservation with a new ID and the supplied event and attendee IDs.",
+        "Reserving for an unknown event returns EVENT_NOT_FOUND and leaves the set of reservations and free seats unchanged.",
+        "Reserving at exactly the start instant and one second after it returns EVENT_STARTED, creates no reservation and consumes no seat; reserving one second before the start still succeeds on the same event.",
+        "All checks run locally by setting the controlled time directly, with no sleeps, wall-clock reads or network."
+      ],
+      "constraints": [
+        "Current time must come only from a time source the test can set; events are preloaded with an ID, positive capacity and UTC start instant."
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "TASK-002",
+      "objective": "Capacity and duplicate rules hold for sequential calls: a full event refuses new attendees while an active attendee can safely retry.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-001"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-002",
+        "AC-003"
+      ],
+      "completion_criteria": [
+        "On an event with capacity 1 holding one active reservation, a different attendee receives CAPACITY_EXCEEDED, no reservation is added and the existing reservation is unchanged.",
+        "Retrying for an attendee who already has an active reservation returns the same reservation ID and active state, including when the event is full.",
+        "On an event with capacity 2, a retry by the first attendee consumes no extra seat: a second attendee still succeeds and a third receives CAPACITY_EXCEEDED.",
+        "At and after the start instant, a retry for an attendee with an active reservation returns EVENT_STARTED instead of the existing reservation, and the reservation stays active and unchanged."
+      ],
+      "constraints": [],
+      "dependencies": [
+        "TASK-001"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "objective": "Simultaneous attempts cannot oversell the last seat or create two active reservations for one attendee, and this is demonstrated deterministically.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-001"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-004",
+        "AC-011"
+      ],
+      "completion_criteria": [
+        "With one seat left, simultaneous attempts by two different attendees yield exactly one success and one CAPACITY_EXCEEDED, and active reservations never exceed capacity.",
+        "Simultaneous duplicate requests by one attendee for one event all return the same reservation ID and together occupy exactly one seat.",
+        "The checks force overlapping calls through a reproducible, deterministic interleaving and are repeated across several interleavings, with no sleeps, timing assumptions or network."
+      ],
+      "constraints": [
+        "The capacity check, duplicate check and creation of the reservation must behave as one indivisible step with respect to other calls."
+      ],
+      "dependencies": [
+        "TASK-002"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "objective": "A caller can cancel an active reservation before the event starts, which releases exactly one seat; repeats and unknown IDs are handled safely.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-002"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-006",
+        "AC-007"
+      ],
+      "completion_criteria": [
+        "On a full event with capacity 2, cancelling one active reservation returns the same ID in cancelled state, then a different attendee can immediately reserve and the next new attendee receives CAPACITY_EXCEEDED, showing exactly one seat was released.",
+        "Repeating the cancellation before the start returns the same ID in cancelled state and releases no additional seat: a further new attendee still receives CAPACITY_EXCEEDED.",
+        "Cancelling an unknown reservation ID returns RESERVATION_NOT_FOUND and leaves all reservations and free seats unchanged."
+      ],
+      "constraints": [],
+      "dependencies": [
+        "TASK-002"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "objective": "An attendee whose reservation was cancelled can book again and receives a fresh reservation while the old one stays cancelled.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-002"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-008"
+      ],
+      "completion_criteria": [
+        "After cancelling, the original attendee reserving the same event before the start receives an active reservation whose ID differs from the cancelled one.",
+        "Inspecting the earlier reservation afterwards shows it is still cancelled, and a further reserve by the attendee returns the fresh ID, not the cancelled one.",
+        "When the event is full after cancellation, the original attendee rebooking receives CAPACITY_EXCEEDED and no reservation is added."
+      ],
+      "constraints": [],
+      "dependencies": [
+        "TASK-004"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "objective": "Cancellation at or after the event start is refused for active reservations, remains idempotent for cancelled ones, and still reports unknown IDs.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-002"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-009"
+      ],
+      "completion_criteria": [
+        "At exactly the start instant and one second after it, cancelling an active reservation returns EVENT_STARTED, the reservation stays active and the occupied seat count is unchanged.",
+        "One second before the start instant, cancelling the same kind of active reservation still succeeds.",
+        "Retrying the cancellation of an already cancelled reservation at and after the start returns the same ID in cancelled state with no capacity effect.",
+        "Cancelling an unknown ID at and after the start returns RESERVATION_NOT_FOUND with no state change."
+      ],
+      "constraints": [],
+      "dependencies": [
+        "TASK-004"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "objective": "Every success state and error code is distinguishable and every failure is shown not to change reservation or capacity state.",
+      "status": "pending",
+      "stories_enabled": [
+        "US-003"
+      ],
+      "acceptance_criteria_addressed": [
+        "AC-010",
+        "AC-011"
+      ],
+      "completion_criteria": [
+        "A table of failing calls covering EVENT_NOT_FOUND, EVENT_STARTED, CAPACITY_EXCEEDED and RESERVATION_NOT_FOUND for both reserve and cancel shows each returns its own stable code.",
+        "For each failing call, the reservation records and free seats observed through the test inspection are identical before and after the call.",
+        "The whole suite runs locally using only the controlled time source and deterministic concurrency checks, with no sleeps, network or external services."
+      ],
+      "constraints": [],
+      "dependencies": [
+        "TASK-003",
+        "TASK-005",
+        "TASK-006"
+      ]
+    }
+  ]
+}
