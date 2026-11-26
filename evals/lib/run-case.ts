@@ -75,7 +75,16 @@ export async function runCase(
   let invokingAgent = false;
 
   const check = async () => {
-    if (!initial || checksRan || !options.checkCase) {
+    if (!initial || checksRan) {
+      return;
+    }
+
+    if (options.noChecks) {
+      result.checks = { status: 'skipped', failures: [] };
+      return;
+    }
+
+    if (!options.checkCase) {
       return;
     }
 

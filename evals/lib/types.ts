@@ -46,8 +46,10 @@ export interface Execution {
   [key: string]: unknown;
 }
 
+export type CheckStatus = 'pass' | 'fail' | 'error' | 'not_run' | 'skipped';
+
 export interface CheckResult {
-  status: string;
+  status: CheckStatus;
   failures: string[];
 }
 
@@ -87,6 +89,8 @@ export interface RunOptions {
   grading: string;
   // Baseline run: the skill is neither installed nor invoked; skill is ''.
   noSkill?: boolean;
+  // The suite's checkCase is not invoked; checks are recorded as skipped.
+  noChecks?: boolean;
   calibrate?: boolean;
   create?: boolean;
   help?: boolean;

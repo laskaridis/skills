@@ -343,3 +343,87 @@ for (const agent of ['codex', 'claude'] as const) {
     assert.equal(calls[0].prompt, item.prompt);
   });
 }
+
+for (const failAt of [undefined, 'agent'] as const) {
+  test(`no-checks run skips the suite checks${failAt ? ' even when the agent fails' : ''}`, async (t) => {
+    // Given
+    const { root, options, item } = await fixture(t);
+    let called = false;
+
+    const checkCase = () => {
+      called = true;
+      return { status: 'pass' as const, failures: [] };
+    };
+
+    // When
+    const result = await runCase(
+      {
+        ...options,
+        noChecks: true,
+        transport: fakeTransport({ failAt }),
+        checkCase,
+      },
+      root,
+      root,
+      item,
+    );
+
+    // Then
+    assert.equal(called, false);
+    assert.deepEqual(result.checks, { status: 'skipped', failures: [] });
+  });
+}
+
+test('no-checks run records skipped checks when no checks module was loaded', async (t) => {
+  // Given
+  const { root, options, item } = await fixture(t);
+
+  // When
+  const result = await runCase(
+    {
+      ...options,
+      noChecks: true,
+      transport: fakeTransport(),
+      checkCase: undefined,
+    },
+    root,
+    root,
+    item,
+  );
+
+  // Then
+  assert.deepEqual(result.checks, { status: 'skipped', failures: [] });
+});
+
+test('no-checks run still judges and tells the judge checks were skipped', async (t) => {
+  // Given
+  const { root, options, item } = await fixture(t);
+  const calls: TransportCall[] = [];
+
+  // When
+  const result = await runCase(
+    {
+      ...options,
+      noChecks: true,
+      transport: fakeTransport({}, calls),
+      checkCase: () => ({ status: 'fail', failures: ['Missing output'] }),
+    },
+    root,
+    root,
+    item,
+  );
+  const judged = calls.find((c) => c.mode.judge);
+
+  // Then
+  assert.equal(result.judge.status, 'ok');
+  assert.deepEqual(
+    result.requirements.map((r) => r.status),
+    ['pass'],
+  );
+  assert.deepEqual(judged!.bundle.deterministic_checks, {
+    status: 'skipped',
+    failures: [],
+  });
+
+  assert.equal(infrastructureFailure({ cases: [result] }), false);
+});

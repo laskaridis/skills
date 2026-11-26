@@ -58,7 +58,9 @@ export async function preflight(
     throw new Error(`Unknown case ID: ${options.case}`);
   }
 
-  await loadDeterministicChecksFor(suite);
+  if (!options.noChecks) {
+    await loadDeterministicChecksFor(suite);
+  }
 
   if (options.calibrate) {
     await loadJudgeTests(suite, definedCases);

@@ -482,3 +482,96 @@ for (const [previous, current] of [
     assert.ok(!limitations.includes('Runtime settings differ'));
   });
 }
+
+test('reports state that the suite checks were skipped', () => {
+  // Given
+  const value = run();
+
+  value.settings.checks_mode = 'skipped';
+  value.cases[0].checks = { status: 'skipped', failures: [] };
+
+  // When
+  const text = report(value);
+
+  // Then
+  assert.ok(text.includes('Checks: skipped (--no-checks).'));
+  assert.ok(text.includes('| ok | skipped | ok |'));
+});
+
+test('reports of runs with checks do not mention skipped checks', () => {
+  // Given
+  const value = run();
+
+  // When
+  const text = report(value);
+
+  // Then
+  assert.ok(!text.includes('Checks: skipped'));
+});
+
+const runWithChecksMode = (checksMode?: string) => {
+  const value = run();
+
+  if (checksMode) {
+    value.settings.checks_mode = checksMode;
+  }
+
+  return value;
+};
+
+for (const [previous, current, side] of [
+  ['skipped', 'run', 'baseline'],
+  ['skipped', undefined, 'baseline'],
+  ['run', 'skipped', 'current'],
+  [undefined, 'skipped', 'current'],
+] as const) {
+  test(`comparison of checks mode ${previous} to ${current} notes the skipped checks`, () => {
+    // Given
+    const before = runWithChecksMode(previous);
+    const after = runWithChecksMode(current);
+
+    // When
+    const { limitations } = compareResults(before, after);
+
+    // Then
+    assert.ok(
+      limitations.includes(
+        `Checks were skipped in the ${side} run; checks changes are not comparable`,
+      ),
+    );
+    assert.ok(limitations.includes('Runtime settings differ'));
+  });
+}
+
+for (const [previous, current] of [
+  [undefined, undefined],
+  [undefined, 'run'],
+  ['run', undefined],
+  ['skipped', 'skipped'],
+] as const) {
+  test(`comparison of checks mode ${previous} to ${current} adds no limitation`, () => {
+    // Given
+    const before = runWithChecksMode(previous);
+    const after = runWithChecksMode(current);
+
+    // When
+    const { limitations } = compareResults(before, after);
+
+    // Then
+    assert.ok(!limitations.some((x) => x.includes('Checks')));
+    assert.ok(!limitations.includes('Runtime settings differ'));
+  });
+}
+
+test('skipped checks are not an infrastructure failure', () => {
+  // Given
+  const value = run();
+
+  value.cases[0].checks = { status: 'skipped', failures: [] };
+
+  // When
+  const failed = infrastructureFailure(value);
+
+  // Then
+  assert.equal(failed, false);
+});

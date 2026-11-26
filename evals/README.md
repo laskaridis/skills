@@ -59,20 +59,21 @@ sorted order. All case definitions are validated before any model call, even whe
 one case is selected; unknown IDs and malformed cases fail early. Scripts run
 TypeScript through Node's native type stripping, so there is no build step.
 
-| Option                     | What it does                                                                                                                                               |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--agent AGENT`            | Agent CLI: `codex` or `claude`. Defaults to `codex`. Judge uses the same CLI.                                                                              |
-| `--model MODEL`            | Agent model. Required for live runs.                                                                                                                       |
-| `--case CASE_ID`           | Run one case instead of all.                                                                                                                               |
-| `--skill DIR`              | Load the skill from `DIR` (must contain `SKILL.md`) instead of `skills/<skill>`.                                                                           |
-| `--no-skill`               | Baseline run: the skill is neither installed nor invoked. `<skill>` still selects the suite. Cannot be combined with `--skill`.                            |
-| `--judge-model MODEL`      | Judge model. Defaults to the agent's model.                                                                                                                |
-| `--reasoning EFFORT`       | Agent reasoning effort. Defaults to `high`; use a value your model supports.                                                                               |
-| `--judge-reasoning EFFORT` | Judge reasoning effort. Defaults to the agent's.                                                                                                           |
-| `--compare FILE`           | Compare against an earlier `results.json`. Still runs agent and judge.                                                                                     |
-| `--calibrate`              | Also judge every prepared control in the suite (see [controls](docs/ADD_CASES.md#check-the-judge-with-controls)).                                          |
-| `--create`                 | With `--case`, scaffold `skills/<skill>/cases/<CASE_ID>/` (prompt, checklist, fixtures). Fails if the skill is missing or the case exists; needs no model. |
-| `--help`                   | Print syntax.                                                                                                                                              |
+| Option                     | What it does                                                                                                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--agent AGENT`            | Agent CLI: `codex` or `claude`. Defaults to `codex`. Judge uses the same CLI.                                                                                  |
+| `--model MODEL`            | Agent model. Required for live runs.                                                                                                                           |
+| `--case CASE_ID`           | Run one case instead of all.                                                                                                                                   |
+| `--skill DIR`              | Load the skill from `DIR` (must contain `SKILL.md`) instead of `skills/<skill>`.                                                                               |
+| `--no-skill`               | Baseline run: the skill is neither installed nor invoked. `<skill>` still selects the suite. Cannot be combined with `--skill`.                                |
+| `--no-checks`              | Skip the suite's deterministic checks (`checks.ts`). Each case's checks are `skipped` and the judge still runs; `results.json` records `checks_mode: skipped`. |
+| `--judge-model MODEL`      | Judge model. Defaults to the agent's model.                                                                                                                    |
+| `--reasoning EFFORT`       | Agent reasoning effort. Defaults to `high`; use a value your model supports.                                                                                   |
+| `--judge-reasoning EFFORT` | Judge reasoning effort. Defaults to the agent's.                                                                                                               |
+| `--compare FILE`           | Compare against an earlier `results.json`. Still runs agent and judge.                                                                                         |
+| `--calibrate`              | Also judge every prepared control in the suite (see [controls](docs/ADD_CASES.md#check-the-judge-with-controls)).                                              |
+| `--create`                 | With `--case`, scaffold `skills/<skill>/cases/<CASE_ID>/` (prompt, checklist, fixtures). Fails if the skill is missing or the case exists; needs no model.     |
+| `--help`                   | Print syntax.                                                                                                                                                  |
 
 Each agent or judge invocation has a fixed ten-minute timeout with no override;
 a whole suite can take longer.
@@ -96,12 +97,12 @@ the run; archived evidence remains.
 Start with `skills/<skill>/artifacts/<run-id>/report.md`. Its case table answers four
 separate questions:
 
-| Result          | Meaning                                                                                                                           |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Execution       | Did the agent run? `ok`, or `timeout` / `execution_error`.                                                                        |
-| Checks          | Did the optional deterministic validator pass? `not_run` = no validator; `error` = the validator itself failed.                   |
-| Judge execution | Did the judge return valid findings? `invalid_response`, `timeout`, `execution_error` are judge problems.                         |
-| Requirements    | Each expectation is `pass`, `fail`, or `ungradable` (evidence missing, unusable, or lost to an execution problem), with evidence. |
+| Result          | Meaning                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Execution       | Did the agent run? `ok`, or `timeout` / `execution_error`.                                                                                 |
+| Checks          | Did the optional deterministic validator pass? `not_run` = no validator; `skipped` = `--no-checks`; `error` = the validator itself failed. |
+| Judge execution | Did the judge return valid findings? `invalid_response`, `timeout`, `execution_error` are judge problems.                                  |
+| Requirements    | Each expectation is `pass`, `fail`, or `ungradable` (evidence missing, unusable, or lost to an execution problem), with evidence.          |
 
 `execution: ok`, `checks: pass`, `judge: ok`, `covers_reservation: fail` means the
 experiment ran fine and found a quality problem. A successful judge call does not

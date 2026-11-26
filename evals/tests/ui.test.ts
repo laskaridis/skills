@@ -865,3 +865,88 @@ test('printSummary marks availability changes in the baseline comparison', () =>
     lines.some((line) => /one\s+◆ checks pass → unavailable/.test(line)),
   );
 });
+
+test('printSummary counts a case with skipped checks and passing requirements as passed', () => {
+  // Given
+  const lines = capture();
+  const results: any = {
+    cases: [caseResult('ok', 'skipped', [finding('a', 'pass')])],
+  };
+
+  // When
+  printSummary(results, '/tmp/run', 5000);
+
+  // Then
+  assert.ok(lines.some((line) => line.includes('PASSED')));
+  assert.ok(lines.some((line) => line.includes('1 passed')));
+  assert.ok(lines.every((line) => !line.includes('errored')));
+});
+
+test('printSummary counts a case with skipped checks and a failing requirement as failed', () => {
+  // Given
+  const lines = capture();
+  const results: any = {
+    cases: [caseResult('ok', 'skipped', [finding('a', 'fail')])],
+  };
+
+  // When
+  printSummary(results, '/tmp/run', 5000);
+
+  // Then
+  assert.ok(lines.some((line) => line.includes('1 failed')));
+});
+
+test('printCase marks skipped checks with a skip icon', () => {
+  // Given
+  const lines = capture();
+  const result = caseResult('ok', 'skipped', [finding('a', 'pass')]);
+
+  // When
+  printCase(result);
+
+  // Then
+  assert.match(lines[2], /– checks\s+skipped/);
+});
+
+test('printHeader identifies a no-checks run', () => {
+  // Given
+  const lines = capture();
+  const results: any = {
+    skill: 'plan',
+    settings: {
+      agent: 'codex',
+      checks_mode: 'skipped',
+      model: 'gpt',
+      judge_model: 'sonnet',
+      judge_reasoning: 'low',
+    },
+  };
+
+  // When
+  printHeader(results, '/tmp/run');
+
+  // Then
+  assert.match(lines[0], /▶ plan\s+codex · gpt · no checks$/);
+});
+
+test('printHeader identifies a run without the skill or the checks', () => {
+  // Given
+  const lines = capture();
+  const results: any = {
+    skill: 'plan',
+    settings: {
+      agent: 'codex',
+      skill_mode: 'none',
+      checks_mode: 'skipped',
+      model: 'gpt',
+      judge_model: 'sonnet',
+      judge_reasoning: 'low',
+    },
+  };
+
+  // When
+  printHeader(results, '/tmp/run');
+
+  // Then
+  assert.match(lines[0], /▶ plan\s+codex · gpt · no skill · no checks$/);
+});
